@@ -1,5 +1,7 @@
 package com.transer.vortice.shared.infrastructure.config;
 
+import com.transer.vortice.shared.infrastructure.security.jwt.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -20,7 +23,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
 /**
- * Configuración de seguridad de Spring Security
+ * Configuración de seguridad de Spring Security.
+ * Configura autenticación JWT, CORS, manejo de sesiones y endpoints públicos/privados.
+ *
+ * @author Vórtice Development Team
  */
 @Configuration
 @EnableWebSecurity
@@ -28,25 +34,61 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    /**
+     * Configura la cadena de filtros de seguridad.
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // Configurar CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // Deshabilitar CSRF (usamos JWT, no cookies)
                 .csrf(AbstractHttpConfigurer::disable)
+
+                // Política de sesión: STATELESS (sin sesiones en servidor)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // Configurar autorización de requests
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos
+                        // Endpoints públicos (no requieren autenticación)
                         .requestMatchers(
-                                "/api/auth/**",
-                                "/api/v3/api-docs/**",
-                                "/api/swagger-ui/**",
-                                "/api/swagger-ui.html",
-                                "/api/actuator/health"
+                                "/auth/**",           // Endpoints de autenticación
+                                "/v3/api-docs/**",    // OpenAPI docs
+                                "/swagger-ui/**",     // Swagger UI
+                                "/swagger-ui.html",   // Swagger UI index
+                                "/actuator/health"    // Health check
                         ).permitAll()
-                        // Todos los demás requieren autenticación
+
+                        // Todos los demás endpoints requieren autenticación
                         .anyRequest().authenticated()
-                );
+                )
+
+                // Manejo de excepciones de autenticación/autorización
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write(
+                                    "{\"error\":\"No autenticado\",\"message\":\"" +
+                                            authException.getMessage() + "\"}"
+                            );
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.getWriter().write(
+                                    "{\"error\":\"Acceso denegado\",\"message\":\"" +
+                                            accessDeniedException.getMessage() + "\"}"
+                            );
+                        })
+                )
+
+                // Agregar filtro JWT antes del filtro de autenticación de usuario/contraseña
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
