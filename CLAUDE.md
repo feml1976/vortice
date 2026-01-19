@@ -44,9 +44,4 @@ Proyecto de modernización del sistema "Gestión Taller" de una arquitectura Leg
 - Si detectas una lógica compleja en el código legacy que no sea clara, solicita una aclaración antes de proceder con la re-escritura.
 
 ## Documentación de Referencia
-- Consultar `/docs/01_Requerimientos_Funcionales_Completo.md` Requerimientos Funcionales Completo.
-- Consultar `/docs/02_Requerimientos_Funcionales_Sistema_Modernizado.md` para Requerimientos funcionales.
-- Consultar `/docs/02_Sugerencias_y_Recomendaciones_Tecnicas.md` sugerencias y recomendaciones.
-- Consultar `/docs/03_Prompt_Master_Desarrollo_IA.md` Prompt Master.
-- Consultar `/docs/04_Plan_de_Etapas_y_Roadmap.md` Roadmap.md.
-
+- Consultar `/docs/PROMPT_MASTER.md` Prompts.
