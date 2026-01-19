@@ -1,0 +1,509 @@
+{
+	"info": {
+		"_postman_id": "vortice-auth-collection",
+		"name": "Vórtice - Auth API",
+		"description": "Colección de Postman para probar los endpoints de autenticación del sistema Vórtice.\n\n## Variables de entorno necesarias:\n- `base_url`: URL base de la API (ej: http://localhost:8080)\n- `access_token`: Token de acceso JWT (se actualiza automáticamente)\n- `refresh_token`: Token de refresco (se actualiza automáticamente)\n\n## Flujo recomendado:\n1. Ejecutar \"Register\" para crear un nuevo usuario\n2. Ejecutar \"Login\" para autenticarse\n3. Los tokens se guardarán automáticamente en las variables de entorno\n4. Probar otros endpoints autenticados\n5. Usar \"Refresh Token\" cuando el access token expire\n6. Usar \"Logout\" para cerrar sesión",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "vortice-auth"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Guardar tokens en variables de entorno",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"access_token\", jsonData.accessToken);",
+									"    pm.environment.set(\"refresh_token\", jsonData.refreshToken);",
+									"    pm.environment.set(\"user_id\", jsonData.user.id);",
+									"    pm.environment.set(\"username\", jsonData.user.username);",
+									"    ",
+									"    console.log(\"✅ Usuario registrado exitosamente\");",
+									"    console.log(\"Access Token guardado:\", jsonData.accessToken.substring(0, 20) + \"...\");",
+									"    console.log(\"Refresh Token guardado:\", jsonData.refreshToken.substring(0, 20) + \"...\");",
+									"}",
+									"",
+									"// Tests de validación",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has access token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.accessToken).to.be.a('string');",
+									"});",
+									"",
+									"pm.test(\"Response has refresh token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.refreshToken).to.be.a('string');",
+									"});",
+									"",
+									"pm.test(\"Response has user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.user).to.be.an('object');",
+									"    pm.expect(jsonData.user.username).to.be.a('string');",
+									"    pm.expect(jsonData.user.email).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Test123!@#\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registra un nuevo usuario en el sistema.\n\n**Campos requeridos:**\n- username: Nombre de usuario único (mínimo 3 caracteres)\n- email: Correo electrónico válido y único\n- password: Contraseña (mínimo 6 caracteres)\n- firstName: Nombre\n- lastName: Apellido\n\n**Respuesta exitosa:** Status 201 con tokens de acceso"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Guardar tokens en variables de entorno",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"access_token\", jsonData.accessToken);",
+									"    pm.environment.set(\"refresh_token\", jsonData.refreshToken);",
+									"    pm.environment.set(\"user_id\", jsonData.user.id);",
+									"    pm.environment.set(\"username\", jsonData.user.username);",
+									"    ",
+									"    console.log(\"✅ Login exitoso\");",
+									"    console.log(\"Access Token guardado:\", jsonData.accessToken.substring(0, 20) + \"...\");",
+									"    console.log(\"Refresh Token guardado:\", jsonData.refreshToken.substring(0, 20) + \"...\");",
+									"    console.log(\"Usuario:\", jsonData.user.username);",
+									"}",
+									"",
+									"// Tests de validación",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response time is less than 2000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"",
+									"pm.test(\"Response has access token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.accessToken).to.be.a('string');",
+									"    pm.expect(jsonData.accessToken.length).to.be.above(20);",
+									"});",
+									"",
+									"pm.test(\"Token type is Bearer\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.tokenType).to.equal('Bearer');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usernameOrEmail\": \"admin\",\n  \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica un usuario y retorna tokens de acceso.\n\n**Campos requeridos:**\n- usernameOrEmail: Nombre de usuario o correo electrónico\n- password: Contraseña\n\n**Usuario de prueba por defecto:**\n- Username: admin\n- Password: Admin123!\n\n**Respuesta exitosa:** Status 200 con access_token y refresh_token"
+					},
+					"response": []
+				},
+				{
+					"name": "Login (by email)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Guardar tokens en variables de entorno",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"access_token\", jsonData.accessToken);",
+									"    pm.environment.set(\"refresh_token\", jsonData.refreshToken);",
+									"    pm.environment.set(\"user_id\", jsonData.user.id);",
+									"    pm.environment.set(\"username\", jsonData.user.username);",
+									"}",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usernameOrEmail\": \"admin@vortice.com\",\n  \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Ejemplo de login usando email en lugar de username."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Guardar nuevos tokens",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"access_token\", jsonData.accessToken);",
+									"    pm.environment.set(\"refresh_token\", jsonData.refreshToken);",
+									"    ",
+									"    console.log(\"✅ Token renovado exitosamente\");",
+									"    console.log(\"Nuevo Access Token:\", jsonData.accessToken.substring(0, 20) + \"...\");",
+									"    console.log(\"Nuevo Refresh Token:\", jsonData.refreshToken.substring(0, 20) + \"...\");",
+									"}",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"New access token received\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.accessToken).to.be.a('string');",
+									"});",
+									"",
+									"pm.test(\"New refresh token received\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.refreshToken).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Renueva el access token usando un refresh token válido.\n\n**Nota importante:** El sistema implementa refresh token rotation, por lo que cada vez que renuevas el token, recibirás un NUEVO refresh token y el anterior será revocado.\n\n**Respuesta exitosa:** Status 200 con nuevos tokens"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Limpiar tokens de las variables de entorno",
+									"if (pm.response.code === 204) {",
+									"    pm.environment.unset(\"access_token\");",
+									"    pm.environment.unset(\"refresh_token\");",
+									"    pm.environment.unset(\"user_id\");",
+									"    pm.environment.unset(\"username\");",
+									"    ",
+									"    console.log(\"✅ Logout exitoso - Tokens eliminados\");",
+									"}",
+									"",
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test(\"Response body is empty\", function () {",
+									"    pm.expect(pm.response.text()).to.equal('');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Cierra la sesión del usuario revocando el refresh token.\n\n**Respuesta exitosa:** Status 204 (No Content)\n\n**Nota:** Después del logout, el refresh token será revocado y no podrás renovar el access token. Deberás hacer login nuevamente."
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Service is running\", function () {",
+									"    pm.expect(pm.response.text()).to.include('running');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"health"
+							]
+						},
+						"description": "Verifica que el servicio de autenticación está funcionando correctamente.\n\n**Este endpoint NO requiere autenticación.**"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticación y gestión de usuarios."
+		},
+		{
+			"name": "Examples - Error Cases",
+			"item": [
+				{
+					"name": "Login - Invalid Credentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 or 401\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 401]);",
+									"});",
+									"",
+									"pm.test(\"Error message is present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usernameOrEmail\": \"admin\",\n  \"password\": \"wrongpassword\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Ejemplo de error: credenciales inválidas"
+					},
+					"response": []
+				},
+				{
+					"name": "Register - Duplicate Username",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 or 409\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 409]);",
+									"});",
+									"",
+									"pm.test(\"Error mentions duplicate\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message.toLowerCase()).to.include('uso');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"email\": \"newemail@example.com\",\n  \"password\": \"Test123!@#\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Ejemplo de error: username duplicado"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh - Invalid Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"invalid-token-12345\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
+						},
+						"description": "Ejemplo de error: refresh token inválido"
+					},
+					"response": []
+				}
+			],
+			"description": "Ejemplos de casos de error para testing"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
