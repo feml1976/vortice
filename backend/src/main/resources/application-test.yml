@@ -1,0 +1,39 @@
+# Configuración para tests
+spring:
+  # Base de datos H2 en memoria para tests
+  datasource:
+    url: jdbc:h2:mem:vortice_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  # Flyway deshabilitado en tests (usamos ddl-auto)
+  flyway:
+    enabled: false
+
+  # Mail mock
+  mail:
+    host: localhost
+    port: 3025
+
+# Logging mínimo en tests
+logging:
+  level:
+    root: WARN
+    com.transer.vortice: INFO
+    org.springframework.test: INFO
+
+# JWT con valores de test
+vortice:
+  jwt:
+    secret: test-secret-key-for-unit-tests-only
+    expiration: 3600000 # 1 hora para tests
+    refresh-expiration: 7200000 # 2 horas para tests

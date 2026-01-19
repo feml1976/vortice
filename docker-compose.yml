@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:18-alpine
+    container_name: vortice-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vortice_dev
+      POSTGRES_USER: vortice_user
+      POSTGRES_PASSWORD: vortice_pass
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - vortice-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vortice_user -d vortice_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Spring Boot (opcional para desarrollo)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    container_name: vortice-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/vortice_dev
+      SPRING_DATASOURCE_USERNAME: vortice_user
+      SPRING_DATASOURCE_PASSWORD: vortice_pass
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vortice-network
+    volumes:
+      - ./backend:/app
+      - maven_cache:/root/.m2
+    profiles:
+      - full  # Solo se levanta con: docker-compose --profile full up
+
+  # Frontend React (opcional para desarrollo)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+    container_name: vortice-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - vortice-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    profiles:
+      - full  # Solo se levanta con: docker-compose --profile full up
+
+  # PgAdmin (opcional para administración de BD)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: vortice-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@vortice.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - vortice-network
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    profiles:
+      - tools  # Solo se levanta con: docker-compose --profile tools up
+
+  # MailHog para testing de emails en desarrollo
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: vortice-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # UI
+    networks:
+      - vortice-network
+    profiles:
+      - tools  # Solo se levanta con: docker-compose --profile tools up
+
+networks:
+  vortice-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  maven_cache:
+    driver: local
