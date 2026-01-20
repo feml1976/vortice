@@ -1,20 +1,32 @@
-# Configuración para tests
+# Configuración para tests con Testcontainers PostgreSQL
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    # Las propiedades de conexión se configuran dinámicamente por Testcontainers
+    # a través de @DynamicPropertySource en BaseRepositoryTest
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      # validate: no cambiar el esquema, solo validar contra las migraciones de Flyway
+      ddl-auto: validate
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
 
   flyway:
-    enabled: false
+    # Habilitar Flyway para ejecutar migraciones en tests
+    enabled: true
+    # Limpiar el esquema antes de ejecutar migraciones (útil para tests)
+    clean-disabled: false
+    clean-on-validation-error: true
+    baseline-on-migrate: true
+
+  # Configuración de SQL para limpiar datos entre tests
+  sql:
+    init:
+      mode: never # No usar scripts de inicialización de Spring, usar solo Flyway
 
 # Rate limiting configurado para tests (límites bajos para facilitar testing)
 vortice:

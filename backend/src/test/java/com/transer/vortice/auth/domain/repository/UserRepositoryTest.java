@@ -2,11 +2,11 @@ package com.transer.vortice.auth.domain.repository;
 
 import com.transer.vortice.auth.domain.model.Role;
 import com.transer.vortice.auth.domain.model.User;
+import com.transer.vortice.shared.infrastructure.BaseRepositoryTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.time.Instant;
@@ -16,13 +16,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests unitarios para UserRepository.
- * Usa @DataJpaTest para levantar una BD H2 en memoria.
+ * Usa Testcontainers con PostgreSQL para ejecutar tests contra una BD real.
  *
  * @author Vórtice Development Team
  */
-@DataJpaTest
 @DisplayName("UserRepository Tests")
-class UserRepositoryTest {
+class UserRepositoryTest extends BaseRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
@@ -239,10 +238,12 @@ class UserRepositoryTest {
         testUser.incrementFailedLoginAttempts();
         userRepository.save(testUser);
         entityManager.flush();
+        entityManager.clear();
 
-        // When
-        testUser.resetFailedLoginAttempts();
-        userRepository.save(testUser);
+        // When - reload the entity to avoid optimistic locking issues
+        User reloaded = userRepository.findById(testUser.getId()).orElseThrow();
+        reloaded.resetFailedLoginAttempts();
+        userRepository.save(reloaded);
         entityManager.flush();
         entityManager.clear();
 

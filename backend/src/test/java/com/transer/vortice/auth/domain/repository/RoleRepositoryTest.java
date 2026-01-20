@@ -2,11 +2,11 @@ package com.transer.vortice.auth.domain.repository;
 
 import com.transer.vortice.auth.domain.model.Permission;
 import com.transer.vortice.auth.domain.model.Role;
+import com.transer.vortice.shared.infrastructure.BaseRepositoryTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.util.List;
@@ -16,13 +16,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests unitarios para RoleRepository.
- * Usa @DataJpaTest para levantar una BD H2 en memoria.
+ * Usa Testcontainers con PostgreSQL para ejecutar tests contra una BD real.
  *
  * @author Vórtice Development Team
  */
-@DataJpaTest
 @DisplayName("RoleRepository Tests")
-class RoleRepositoryTest {
+class RoleRepositoryTest extends BaseRepositoryTest {
 
     @Autowired
     private RoleRepository roleRepository;
@@ -230,8 +229,8 @@ class RoleRepositoryTest {
         Role updated = roleRepository.findById(role.getId()).orElseThrow();
 
         // Then
-        assertThat(updated.hasPermission("TEST_READ")).isTrue();
-        assertThat(updated.hasPermission("TEST_WRITE")).isFalse();
+        assertThat(updated.hasPermission("TEST:READ")).isTrue(); // name is "TEST:READ"
+        assertThat(updated.hasPermission("TEST:WRITE")).isFalse();
     }
 
     @Test
@@ -270,9 +269,9 @@ class RoleRepositoryTest {
         // Then
         Role updated = roleRepository.findById(role.getId()).orElseThrow();
         assertThat(updated.getPermissions()).hasSize(3);
-        assertThat(updated.hasPermission("PERM_1")).isTrue();
-        assertThat(updated.hasPermission("PERM_2")).isTrue();
-        assertThat(updated.hasPermission("PERM_3")).isTrue();
+        assertThat(updated.hasPermission("TEST:PERM_1")).isTrue(); // name is "TEST:PERM_1"
+        assertThat(updated.hasPermission("TEST:PERM_2")).isTrue();
+        assertThat(updated.hasPermission("TEST:PERM_3")).isTrue();
     }
 
     @Test

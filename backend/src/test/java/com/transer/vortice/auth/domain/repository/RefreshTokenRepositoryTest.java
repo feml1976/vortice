@@ -3,11 +3,11 @@ package com.transer.vortice.auth.domain.repository;
 import com.transer.vortice.auth.domain.model.RefreshToken;
 import com.transer.vortice.auth.domain.model.Role;
 import com.transer.vortice.auth.domain.model.User;
+import com.transer.vortice.shared.infrastructure.BaseRepositoryTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.time.Instant;
@@ -19,13 +19,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests unitarios para RefreshTokenRepository.
- * Usa @DataJpaTest para levantar una BD H2 en memoria.
+ * Usa Testcontainers con PostgreSQL para ejecutar tests contra una BD real.
  *
  * @author Vórtice Development Team
  */
-@DataJpaTest
 @DisplayName("RefreshTokenRepository Tests")
-class RefreshTokenRepositoryTest {
+class RefreshTokenRepositoryTest extends BaseRepositoryTest {
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
