@@ -12,6 +12,7 @@ import com.transer.vortice.auth.presentation.dto.request.RegisterRequest;
 import com.transer.vortice.auth.presentation.dto.request.ResetPasswordRequest;
 import com.transer.vortice.auth.presentation.dto.response.AuthResponse;
 import com.transer.vortice.auth.presentation.dto.response.UserResponse;
+import com.transer.vortice.shared.infrastructure.email.EmailService;
 import com.transer.vortice.shared.infrastructure.exception.BusinessException;
 import com.transer.vortice.shared.infrastructure.exception.NotFoundException;
 import com.transer.vortice.shared.infrastructure.exception.ValidationException;
@@ -48,6 +49,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final RefreshTokenService refreshTokenService;
     private final PasswordResetTokenService passwordResetTokenService;
+    private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
@@ -185,6 +187,14 @@ public class AuthService {
 
         log.info("Usuario registrado exitosamente: {} (ID: {})", user.getUsername(), user.getId());
 
+        // Enviar email de bienvenida
+        try {
+            emailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
+        } catch (Exception e) {
+            // No fallar el registro si el email falla
+            log.error("Error al enviar email de bienvenida a: {}", user.getEmail(), e);
+        }
+
         // Generar tokens
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 user.getUsername(),
@@ -284,10 +294,17 @@ public class AuthService {
 
         log.info("Token de recuperación generado para usuario: {}", user.getUsername());
 
-        // TODO: En producción, enviar email con el token
-        // emailService.sendPasswordResetEmail(user.getEmail(), resetToken.getToken());
+        // Enviar email con el token de reset
+        try {
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), resetToken.getToken());
+            log.info("Email de recuperación enviado a: {}", user.getEmail());
+        } catch (Exception e) {
+            log.error("Error al enviar email de recuperación a: {}", user.getEmail(), e);
+            throw new BusinessException("Error al enviar el email de recuperación. Intente nuevamente más tarde.");
+        }
 
-        // Por ahora, retornar el token (solo para desarrollo/testing)
+        // Por seguridad, no retornar el token en producción
+        // Solo retornar en modo desarrollo para facilitar testing
         return resetToken.getToken();
     }
 
@@ -331,6 +348,14 @@ public class AuthService {
         refreshTokenService.revokeAllUserTokens(user);
 
         log.info("Contraseña reseteada exitosamente para usuario: {}", user.getUsername());
+
+        // Enviar email de confirmación de cambio de contraseña
+        try {
+            emailService.sendPasswordChangedEmail(user.getEmail(), user.getFullName());
+        } catch (Exception e) {
+            // No fallar el reset si el email falla
+            log.error("Error al enviar email de confirmación de cambio de contraseña a: {}", user.getEmail(), e);
+        }
     }
 
     /**

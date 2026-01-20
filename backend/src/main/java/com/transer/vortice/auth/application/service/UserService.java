@@ -5,6 +5,7 @@ import com.transer.vortice.auth.domain.repository.UserRepository;
 import com.transer.vortice.auth.presentation.dto.request.ChangePasswordRequest;
 import com.transer.vortice.auth.presentation.dto.request.UpdateProfileRequest;
 import com.transer.vortice.auth.presentation.dto.response.UserResponse;
+import com.transer.vortice.shared.infrastructure.email.EmailService;
 import com.transer.vortice.shared.infrastructure.exception.BusinessException;
 import com.transer.vortice.shared.infrastructure.exception.NotFoundException;
 import com.transer.vortice.shared.infrastructure.exception.ValidationException;
@@ -32,6 +33,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     /**
      * Obtiene el usuario autenticado actualmente.
@@ -135,6 +137,14 @@ public class UserService {
         userRepository.save(user);
 
         log.info("Contraseña cambiada exitosamente para usuario: {}", user.getUsername());
+
+        // Enviar email de confirmación de cambio de contraseña
+        try {
+            emailService.sendPasswordChangedEmail(user.getEmail(), user.getFullName());
+        } catch (Exception e) {
+            // No fallar el cambio de contraseña si el email falla
+            log.error("Error al enviar email de confirmación de cambio de contraseña a: {}", user.getEmail(), e);
+        }
     }
 
     /**

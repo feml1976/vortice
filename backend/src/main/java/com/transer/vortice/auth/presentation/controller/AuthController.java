@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +33,9 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
 
     /**
      * Endpoint de login.
@@ -162,10 +166,15 @@ public class AuthController {
 
         String resetToken = authService.forgotPassword(forgotPasswordRequest);
 
-        log.info("Token de recuperación generado para email: {}", forgotPasswordRequest.getEmail());
+        log.info("Email de recuperación enviado para: {}", forgotPasswordRequest.getEmail());
 
-        // En desarrollo, devolver el token. En producción, solo devolver mensaje de confirmación
-        return ResponseEntity.ok("Token de recuperación (solo desarrollo): " + resetToken);
+        // En desarrollo, devolver el token para facilitar testing
+        // En producción, solo devolver mensaje genérico por seguridad
+        if ("dev".equalsIgnoreCase(activeProfile) || "local".equalsIgnoreCase(activeProfile)) {
+            return ResponseEntity.ok("Email de recuperación enviado. Token (solo desarrollo): " + resetToken);
+        } else {
+            return ResponseEntity.ok("Si el email está registrado, recibirás un enlace de recuperación.");
+        }
     }
 
     /**

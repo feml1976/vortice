@@ -37,6 +37,24 @@ spring:
     default-property-inclusion: non_null
     time-zone: America/Bogota
 
+  # Configuración de correo electrónico
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+        debug: false
+
   # Configuración de seguridad
   security:
     user:
@@ -90,6 +108,12 @@ management:
 
 # Configuración personalizada de la aplicación
 vortice:
+  # Configuración de la aplicación
+  app:
+    name: ${APP_NAME:Vórtice}
+    url: ${APP_URL:http://localhost:5173}
+    support-email: ${SUPPORT_EMAIL:soporte@vortice.transer.com}
+
   jwt:
     secret: ${JWT_SECRET:vortice-secret-key-change-this-in-production-use-env-variable}
     expiration: 86400000 # 24 horas en milisegundos
