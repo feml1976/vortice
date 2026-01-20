@@ -206,6 +206,18 @@ export default function LoginPage() {
               {isLoading || isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </Button>
 
+            {/* Link de recuperación de contraseña */}
+            <Box sx={{ textAlign: 'center', mb: 2 }}>
+              <Link
+                component={RouterLink}
+                to="/forgot-password"
+                underline="hover"
+                variant="body2"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </Box>
+
             {/* Link de Registro */}
             <Box sx={{ textAlign: 'center', mt: 2 }}>
               <Typography variant="body2" color="text.secondary">

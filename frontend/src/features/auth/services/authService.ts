@@ -7,10 +7,11 @@ import type {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
-  RegisterResponse,
   RefreshTokenRequest,
   RefreshTokenResponse,
   LogoutRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
 } from '../types/auth.types';
 
 /**
@@ -28,8 +29,8 @@ export const authService = {
   /**
    * Registrar nuevo usuario
    */
-  async register(data: RegisterRequest): Promise<RegisterResponse> {
-    const response = await httpClient.post<RegisterResponse>('/auth/register', data);
+  async register(data: RegisterRequest): Promise<LoginResponse> {
+    const response = await httpClient.post<LoginResponse>('/auth/register', data);
     return response.data;
   },
 
@@ -68,6 +69,21 @@ export const authService = {
   async getCurrentUser() {
     const response = await httpClient.get('/auth/me');
     return response.data;
+  },
+
+  /**
+   * Solicitar recuperación de contraseña
+   */
+  async forgotPassword(data: ForgotPasswordRequest): Promise<string> {
+    const response = await httpClient.post<string>('/auth/forgot-password', data);
+    return response.data;
+  },
+
+  /**
+   * Resetear contraseña con token
+   */
+  async resetPassword(data: ResetPasswordRequest): Promise<void> {
+    await httpClient.post<void>('/auth/reset-password', data);
   },
 };
 

@@ -63,11 +63,25 @@ export const useAuthStore = create<AuthStore>()(
         try {
           set({ isLoading: true, error: null });
 
-          await authService.register(data);
+          // El endpoint de registro devuelve AuthResponse (igual que login)
+          const response = await authService.register(data);
 
-          set({ isLoading: false, error: null });
+          // Guardar tokens en localStorage
+          localStorage.setItem('accessToken', response.accessToken);
+          localStorage.setItem('refreshToken', response.refreshToken);
+          localStorage.setItem('user', JSON.stringify(response.user));
 
-          toast.success('¡Registro exitoso! Ahora puedes iniciar sesión.');
+          // Actualizar estado (login automático)
+          set({
+            user: response.user,
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+
+          toast.success(`¡Bienvenido, ${response.user.firstName}! Cuenta creada exitosamente.`);
         } catch (error: any) {
           const errorMessage = error.response?.data?.message || 'Error al registrar usuario';
           set({ error: errorMessage, isLoading: false });

@@ -124,3 +124,7 @@ vortice:
       capacity: 3
       refill-tokens: 3
       refill-period-minutes: 60
+
+  password-reset:
+    # Tiempo de expiración del token de reset en minutos
+    expiration: 60 # 1 hora

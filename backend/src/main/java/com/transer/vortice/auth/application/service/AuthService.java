@@ -1,15 +1,19 @@
 package com.transer.vortice.auth.application.service;
 
+import com.transer.vortice.auth.domain.model.PasswordResetToken;
 import com.transer.vortice.auth.domain.model.RefreshToken;
 import com.transer.vortice.auth.domain.model.Role;
 import com.transer.vortice.auth.domain.model.User;
 import com.transer.vortice.auth.domain.repository.RoleRepository;
 import com.transer.vortice.auth.domain.repository.UserRepository;
+import com.transer.vortice.auth.presentation.dto.request.ForgotPasswordRequest;
 import com.transer.vortice.auth.presentation.dto.request.LoginRequest;
 import com.transer.vortice.auth.presentation.dto.request.RegisterRequest;
+import com.transer.vortice.auth.presentation.dto.request.ResetPasswordRequest;
 import com.transer.vortice.auth.presentation.dto.response.AuthResponse;
 import com.transer.vortice.auth.presentation.dto.response.UserResponse;
 import com.transer.vortice.shared.infrastructure.exception.BusinessException;
+import com.transer.vortice.shared.infrastructure.exception.NotFoundException;
 import com.transer.vortice.shared.infrastructure.exception.ValidationException;
 import com.transer.vortice.shared.infrastructure.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +47,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final RefreshTokenService refreshTokenService;
+    private final PasswordResetTokenService passwordResetTokenService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
@@ -246,6 +251,86 @@ public class AuthService {
         refreshTokenService.revokeToken(refreshTokenValue);
 
         log.info("Logout exitoso");
+    }
+
+    /**
+     * Solicita recuperación de contraseña para un usuario.
+     * Genera un token de reset que será enviado por email.
+     *
+     * @param forgotPasswordRequest email del usuario
+     * @return token de reset generado (en producción, esto se enviaría por email)
+     */
+    @Transactional
+    public String forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
+        log.info("Solicitud de recuperación de contraseña para email: {}", forgotPasswordRequest.getEmail());
+
+        // Buscar usuario por email
+        User user = userRepository.findByEmail(forgotPasswordRequest.getEmail())
+                .orElseThrow(() -> {
+                    log.warn("Solicitud de recuperación de contraseña para email no registrado: {}",
+                            forgotPasswordRequest.getEmail());
+                    // Por seguridad, no revelar si el email existe o no
+                    return new NotFoundException("Si el email está registrado, recibirás un enlace de recuperación");
+                });
+
+        // Verificar que el usuario esté activo
+        if (!user.getIsActive()) {
+            log.warn("Solicitud de recuperación de contraseña para usuario inactivo: {}", user.getUsername());
+            throw new BusinessException("La cuenta de usuario está desactivada");
+        }
+
+        // Generar token de reset
+        PasswordResetToken resetToken = passwordResetTokenService.createPasswordResetToken(user);
+
+        log.info("Token de recuperación generado para usuario: {}", user.getUsername());
+
+        // TODO: En producción, enviar email con el token
+        // emailService.sendPasswordResetEmail(user.getEmail(), resetToken.getToken());
+
+        // Por ahora, retornar el token (solo para desarrollo/testing)
+        return resetToken.getToken();
+    }
+
+    /**
+     * Resetea la contraseña de un usuario usando un token de reset válido.
+     *
+     * @param resetPasswordRequest datos de reset (token y nueva contraseña)
+     */
+    @Transactional
+    public void resetPassword(ResetPasswordRequest resetPasswordRequest) {
+        log.info("Solicitando reset de contraseña con token");
+
+        // Validar que las contraseñas coincidan
+        if (!resetPasswordRequest.getNewPassword().equals(resetPasswordRequest.getConfirmPassword())) {
+            throw new ValidationException("Las contraseñas no coinciden");
+        }
+
+        // Verificar token de reset
+        PasswordResetToken resetToken = passwordResetTokenService.verifyToken(
+                resetPasswordRequest.getResetToken());
+
+        User user = resetToken.getUser();
+
+        // Cambiar contraseña
+        user.setPasswordHash(passwordEncoder.encode(resetPasswordRequest.getNewPassword()));
+        user.setPasswordChangedAt(Instant.now());
+
+        // Desbloquear usuario si estaba bloqueado por intentos fallidos
+        if (user.getIsLocked()) {
+            user.setIsLocked(false);
+            user.resetFailedLoginAttempts();
+            log.info("Usuario desbloqueado tras reset de contraseña: {}", user.getUsername());
+        }
+
+        userRepository.save(user);
+
+        // Marcar token como usado
+        passwordResetTokenService.markTokenAsUsed(resetToken);
+
+        // Invalidar todos los refresh tokens del usuario (por seguridad)
+        refreshTokenService.revokeAllUserTokens(user);
+
+        log.info("Contraseña reseteada exitosamente para usuario: {}", user.getUsername());
     }
 
     /**

@@ -1,9 +1,11 @@
 package com.transer.vortice.auth.presentation.controller;
 
 import com.transer.vortice.auth.application.service.AuthService;
+import com.transer.vortice.auth.presentation.dto.request.ForgotPasswordRequest;
 import com.transer.vortice.auth.presentation.dto.request.LoginRequest;
 import com.transer.vortice.auth.presentation.dto.request.RefreshTokenRequest;
 import com.transer.vortice.auth.presentation.dto.request.RegisterRequest;
+import com.transer.vortice.auth.presentation.dto.request.ResetPasswordRequest;
 import com.transer.vortice.auth.presentation.dto.response.AuthResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -135,6 +137,60 @@ public class AuthController {
         authService.logout(refreshTokenRequest.getRefreshToken());
 
         log.info("Logout exitoso");
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Endpoint de solicitud de recuperación de contraseña.
+     * Genera un token de reset que se envía al email del usuario.
+     *
+     * @param forgotPasswordRequest email del usuario
+     * @return mensaje de confirmación
+     */
+    @PostMapping("/forgot-password")
+    @Operation(
+            summary = "Solicitar recuperación de contraseña",
+            description = "Envía un email con enlace de recuperación de contraseña al usuario"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Email de recuperación enviado"),
+            @ApiResponse(responseCode = "404", description = "Email no encontrado")
+    })
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+        log.info("Request POST /api/auth/forgot-password - email: {}", forgotPasswordRequest.getEmail());
+
+        String resetToken = authService.forgotPassword(forgotPasswordRequest);
+
+        log.info("Token de recuperación generado para email: {}", forgotPasswordRequest.getEmail());
+
+        // En desarrollo, devolver el token. En producción, solo devolver mensaje de confirmación
+        return ResponseEntity.ok("Token de recuperación (solo desarrollo): " + resetToken);
+    }
+
+    /**
+     * Endpoint de reset de contraseña con token.
+     * Permite al usuario establecer una nueva contraseña usando un token válido.
+     *
+     * @param resetPasswordRequest datos de reset (token y nueva contraseña)
+     * @return respuesta vacía con status 204
+     */
+    @PostMapping("/reset-password")
+    @Operation(
+            summary = "Resetear contraseña con token",
+            description = "Establece una nueva contraseña usando un token de recuperación válido"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Contraseña reseteada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Token inválido o contraseñas no coinciden"),
+            @ApiResponse(responseCode = "403", description = "Token expirado o ya usado")
+    })
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
+        log.info("Request POST /api/auth/reset-password");
+
+        authService.resetPassword(resetPasswordRequest);
+
+        log.info("Contraseña reseteada exitosamente");
 
         return ResponseEntity.noContent().build();
     }

@@ -5,12 +5,20 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import theme from './theme';
 
-// Pages
+// Pages - Auth
 import LoginPage from '@/features/auth/pages/LoginPage';
+import RegisterPage from '@/features/auth/pages/RegisterPage';
+import ForgotPasswordPage from '@/features/auth/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
+import ProfilePage from '@/features/auth/pages/ProfilePage';
+import ChangePasswordPage from '@/features/auth/pages/ChangePasswordPage';
+
+// Pages - Dashboard
 import DashboardPage from '@/shared/pages/DashboardPage';
 
 // Components
 import AuthGuard from '@/features/auth/components/AuthGuard';
+import MainLayout from '@/shared/layouts/MainLayout';
 
 // Crear instancia de QueryClient
 const queryClient = new QueryClient({
@@ -33,7 +41,7 @@ function App() {
             {/* Ruta raíz - redirige a dashboard o login según autenticación */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-            {/* Ruta de Login - No requiere autenticación */}
+            {/* Rutas Públicas - No requieren autenticación */}
             <Route
               path="/login"
               element={
@@ -42,16 +50,51 @@ function App() {
                 </AuthGuard>
               }
             />
-
-            {/* Rutas Protegidas - Requieren autenticación */}
             <Route
-              path="/dashboard"
+              path="/register"
               element={
-                <AuthGuard>
-                  <DashboardPage />
+                <AuthGuard requireAuth={false}>
+                  <RegisterPage />
                 </AuthGuard>
               }
             />
+            <Route
+              path="/forgot-password"
+              element={
+                <AuthGuard requireAuth={false}>
+                  <ForgotPasswordPage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <AuthGuard requireAuth={false}>
+                  <ResetPasswordPage />
+                </AuthGuard>
+              }
+            />
+
+            {/* Rutas Protegidas con Layout - Requieren autenticación */}
+            <Route
+              element={
+                <AuthGuard>
+                  <MainLayout />
+                </AuthGuard>
+              }
+            >
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/change-password" element={<ChangePasswordPage />} />
+
+              {/* Módulos (placeholder - a implementar) */}
+              <Route path="/workshop" element={<DashboardPage />} />
+              <Route path="/inventory" element={<DashboardPage />} />
+              <Route path="/purchasing" element={<DashboardPage />} />
+              <Route path="/fleet" element={<DashboardPage />} />
+              <Route path="/hr" element={<DashboardPage />} />
+              <Route path="/reporting" element={<DashboardPage />} />
+            </Route>
 
             {/* Ruta 404 - Página no encontrada */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
