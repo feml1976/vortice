@@ -1,5 +1,6 @@
 package com.transer.vortice.shared.infrastructure.config;
 
+import com.transer.vortice.shared.infrastructure.ratelimit.RateLimitFilter;
 import com.transer.vortice.shared.infrastructure.security.jwt.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     /**
      * Configura la cadena de filtros de seguridad.
@@ -86,6 +88,9 @@ public class SecurityConfig {
                             );
                         })
                 )
+
+                // Agregar filtro de Rate Limiting primero (antes de JWT)
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
 
                 // Agregar filtro JWT antes del filtro de autenticación de usuario/contraseña
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -155,6 +155,13 @@
             <artifactId>caffeine</artifactId>
         </dependency>
 
+        <!-- Bucket4j para Rate Limiting -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
+
         <!-- DevTools para hot reload en desarrollo -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

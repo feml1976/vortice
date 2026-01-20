@@ -106,3 +106,21 @@ vortice:
     max-file-size: 10MB
     max-request-size: 20MB
     temp-directory: ${java.io.tmpdir}/vortice-uploads
+
+  rate-limit:
+    enabled: true
+    # Límite global: 100 requests por minuto por IP
+    global:
+      capacity: 100
+      refill-tokens: 100
+      refill-period-minutes: 1
+    # Límite para endpoints de autenticación: 5 requests por minuto por IP
+    auth:
+      capacity: 5
+      refill-tokens: 5
+      refill-period-minutes: 1
+    # Límite para registro: 3 requests por hora por IP
+    register:
+      capacity: 3
+      refill-tokens: 3
+      refill-period-minutes: 60

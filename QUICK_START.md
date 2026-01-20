@@ -91,6 +91,29 @@ curl -X POST http://localhost:8080/api/auth/login \
 }
 ```
 
+## 🛡️ Rate Limiting
+
+El sistema implementa **limitación de peticiones** para proteger contra ataques:
+
+- **Login:** 5 intentos por minuto por IP
+- **Register:** 3 intentos por hora por IP
+- **Global:** 100 peticiones por minuto por IP
+
+Si recibes un error **429 Too Many Requests**:
+
+```json
+{
+  "status": 429,
+  "error": "Too Many Requests",
+  "message": "Límite de peticiones excedido para intentos de login. Por favor, intente nuevamente en 45 segundos.",
+  "retryAfterSeconds": 45
+}
+```
+
+**Solución:** Espera el tiempo indicado en `retryAfterSeconds` antes de reintentar.
+
+**Ver más:** Consulta `RATE_LIMITING.md` para detalles completos.
+
 ## ⚠️ Problemas Comunes
 
 ### Error 404 - Not Found
