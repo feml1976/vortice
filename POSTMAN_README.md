@@ -36,7 +36,7 @@ El archivo de entorno incluye las siguientes variables:
 
 | Variable | Descripción | Valor por defecto |
 |----------|-------------|-------------------|
-| `base_url` | URL base de la API | `http://localhost:8080` |
+| `base_url` | URL base de la API | `http://localhost:8080/api` |
 | `access_token` | Token JWT de acceso | (auto-generado) |
 | `refresh_token` | Token de refresco | (auto-generado) |
 | `user_id` | ID del usuario autenticado | (auto-generado) |
@@ -184,13 +184,15 @@ Header: Authorization: Bearer {{access_token}}
 Body: {"refreshToken": "{{refresh_token}}"}
 ```
 
+**Nota:** La variable `base_url` ya incluye el context path `/api`, por lo que no necesitas agregarlo manualmente.
+
 ## 🛠️ Troubleshooting
 
 ### Error: "Could not get any response"
 
 - Verifica que el backend está corriendo en `http://localhost:8080`
 - Verifica que no hay problemas de firewall
-- Prueba el endpoint Health Check primero
+- Prueba el endpoint Health Check primero (`http://localhost:8080/api/auth/health`)
 
 ### Error: "Refresh token no encontrado"
 
@@ -209,9 +211,10 @@ Body: {"refreshToken": "{{refresh_token}}"}
 
 ## 📚 Recursos Adicionales
 
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **OpenAPI Docs**: http://localhost:8080/v3/api-docs
-- **Health Check**: http://localhost:8080/auth/health
+- **Swagger UI**: http://localhost:8080/api/swagger-ui.html
+- **OpenAPI Docs**: http://localhost:8080/api/v3/api-docs
+- **Health Check**: http://localhost:8080/api/auth/health
+- **Actuator Health**: http://localhost:8080/api/actuator/health
 
 ## 📞 Soporte
 
