@@ -1,0 +1,282 @@
+---
+title: Sistema de Gestión de Llantas - Modelo de Dominio (Diagrama de Clases)
+---
+classDiagram
+    %% Entidades Principales
+    class Llanta {
+        -String numeroLlanta
+        -String grupo
+        -BigDecimal valor
+        -LocalDate fechaCompra
+        -Integer proveedorId
+        -Integer numeroFactura
+        -Integer fichaId
+        -EstadoLlanta estado
+        +getId() LlantaId
+        +calcularKilometrosTotales() Integer
+        +calcularCostoPorKm() BigDecimal
+        +estaAptaParaUso() Boolean
+        +requiereMuestreo() Boolean
+    }
+
+    class LlantaId {
+        <<ValueObject>>
+        -String numeroLlanta
+        -String grupo
+    }
+
+    class EstadoLlanta {
+        <<enumeration>>
+        INVENTARIO
+        ACTIVA
+        INTERMEDIO
+        RETIRADA
+    }
+
+    class FichaTecnica {
+        -Integer codigo
+        -Integer marcaId
+        -Integer tipoId
+        -Integer referenciaId
+        -String dimension
+        -Integer kilometrosEsperados
+        -BigDecimal profundidadInicialPI
+        -BigDecimal profundidadInicialPC
+        -BigDecimal profundidadInicialPD
+        -Integer numeroReencauchesEsperados
+        -BigDecimal costoPorHora
+        +calcularEficiencia(kmsReales) Double
+        +validarProfundidad(profundidad) Boolean
+    }
+
+    class Vehiculo {
+        -String placa
+        -Integer claseId
+        -String marca
+        -Integer modelo
+        -Integer kilometrajeInicial
+        -Integer kilometrajeActual
+        -Boolean activo
+        -Boolean operando
+        +actualizarKilometraje(nuevoKm) void
+        +obtenerConfiguracionLlantas() List~PosicionLlanta~
+        +tieneEspacioDisponible() Boolean
+    }
+
+    class LlantaActiva {
+        -LlantaId llantaId
+        -String placaVehiculo
+        -Integer posicion
+        -Integer kilometrajeInstalacion
+        -LocalDate fechaInstalacion
+        +calcularKilometrosRecorridos() Integer
+        +calcularDiasEnUso() Integer
+        +obtenerUltimoMuestreo() Muestreo
+    }
+
+    class Muestreo {
+        -LlantaId llantaId
+        -Integer kilometraje
+        -LocalDate fecha
+        -BigDecimal profundidadPI
+        -BigDecimal profundidadPC
+        -BigDecimal profundidadPD
+        -Integer presion
+        +calcularProfundidadPromedio() BigDecimal
+        +calcularDesgaste(profInicial) BigDecimal
+        +detectarDesgasteIrregular() Boolean
+        +generarAlerta() Alerta
+    }
+
+    class Historia {
+        -LlantaId llantaId
+        -String placaVehiculo
+        -Integer posicion
+        -Integer kilometrajeInstalacion
+        -LocalDate fechaInstalacion
+        -Integer kilometrajeRemocion
+        -LocalDate fechaRemocion
+        -Integer motivoId
+        -Integer numeroReencauche
+        +calcularKmsRecorridos() Integer
+        +calcularDiasEnVehiculo() Integer
+    }
+
+    class Inventario {
+        -LlantaId llantaId
+        -Integer localizacionId
+        -Integer diasEnInventario
+        +estaDisponible() Boolean
+        +calcularAntiguedad() Integer
+    }
+
+    class Intermedio {
+        -LlantaId llantaId
+        -Integer proveedorEvaluacion
+        -EstadoEvaluacion evaluacion
+        +puedeRecircular() Boolean
+        +requiereReencauche() Boolean
+        +requiereBaja() Boolean
+    }
+
+    class Retirada {
+        -LlantaId llantaId
+        -BigDecimal valorResidual
+        -Integer numeroActa
+        -LocalDate fechaBaja
+        -String autor
+        -Integer motivoId
+        +puedeReversarse() Boolean
+    }
+
+    class ClaseVehiculo {
+        -Integer codigo
+        -String nombre
+        -Integer numeroLlantas
+        -List~PosicionLlanta~ esquemaPosiciones
+    }
+
+    class PosicionLlanta {
+        -Integer numero
+        -TipoPosicion tipo
+        -String descripcion
+    }
+
+    class TipoPosicion {
+        <<enumeration>>
+        DIRECCIONAL
+        TRACCION
+        ARRASTRE
+    }
+
+    class Proveedor {
+        -Integer codigo
+        -String nombre
+        -String contacto
+        -Boolean activo
+    }
+
+    class Marca {
+        -Integer codigo
+        -String nombre
+    }
+
+    class Tipo {
+        -Integer codigo
+        -String nombre
+        -String descripcion
+    }
+
+    class Referencia {
+        -Integer codigo
+        -String nombre
+        -String especificaciones
+    }
+
+    class MotivoObservacion {
+        -Integer codigo
+        -String detalle
+        -Boolean generaReingreso
+    }
+
+    class KilometrosRecorridos {
+        -Integer secuencia
+        -LlantaId llantaId
+        -BigDecimal kilometrosAcumulados
+        -LocalDate fechaActualizacion
+        +actualizar(nuevoKms) void
+    }
+
+    class Alerta {
+        -Integer id
+        -TipoAlerta tipo
+        -LlantaId llantaId
+        -String mensaje
+        -LocalDate fecha
+        -Prioridad prioridad
+        -Boolean atendida
+    }
+
+    class TipoAlerta {
+        <<enumeration>>
+        DESGASTE_CRITICO
+        DESGASTE_IRREGULAR
+        REQUIERE_MUESTREO
+        PRESION_INCORRECTA
+        INVENTARIO_BAJO
+    }
+
+    class Prioridad {
+        <<enumeration>>
+        ALTA
+        MEDIA
+        BAJA
+    }
+
+    %% Agregados y Servicios de Dominio
+    class GestionLlantaService {
+        <<DomainService>>
+        +montarLlanta(llanta, vehiculo, posicion) Result
+        +desmontarLlanta(llanta, motivo) Result
+        +rotarLlantas(vehiculo, esquemaRotacion) Result
+    }
+
+    class MuestreoService {
+        <<DomainService>>
+        +registrarMuestreo(muestreo) Result
+        +calcularProyeccionVidaUtil(llanta) ProyeccionVidaUtil
+        +generarProgramacionMuestreos() List~ProgramacionMuestreo~
+    }
+
+    class AnalisisRendimientoService {
+        <<DomainService>>
+        +calcularCostoPorKilometro(llanta) BigDecimal
+        +compararRendimientoPorMarca() Map
+        +proyectarNecesidadCompra(periodo) ProyeccionCompra
+    }
+
+    %% Relaciones de Composición y Agregación
+    Llanta *-- LlantaId
+    Llanta -- EstadoLlanta
+    Llanta --> FichaTecnica
+    Llanta --> Proveedor
+
+    LlantaActiva --> Llanta
+    LlantaActiva --> Vehiculo
+    LlantaActiva "1" *-- "0..*" Muestreo
+
+    Historia --> Llanta
+    Historia --> Vehiculo
+    Historia --> MotivoObservacion
+
+    Inventario --> Llanta
+    Intermedio --> Llanta
+    Retirada --> Llanta
+
+    Vehiculo --> ClaseVehiculo
+    ClaseVehiculo "1" *-- "1..*" PosicionLlanta
+    PosicionLlanta -- TipoPosicion
+
+    FichaTecnica --> Marca
+    FichaTecnica --> Tipo
+    FichaTecnica --> Referencia
+
+    Muestreo "0..*" -- "0..*" Alerta
+    Alerta -- TipoAlerta
+    Alerta -- Prioridad
+
+    KilometrosRecorridos --> Llanta
+
+    %% Relaciones con Servicios
+    GestionLlantaService ..> Llanta
+    GestionLlantaService ..> LlantaActiva
+    GestionLlantaService ..> Vehiculo
+    GestionLlantaService ..> Historia
+
+    MuestreoService ..> Muestreo
+    MuestreoService ..> LlantaActiva
+    MuestreoService ..> Alerta
+
+    AnalisisRendimientoService ..> Historia
+    AnalisisRendimientoService ..> FichaTecnica
+    AnalisisRendimientoService ..> Llanta

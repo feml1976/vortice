@@ -3,7 +3,7 @@
 
 **Versión:** 1.1
 **Fecha:** 19 de Enero de 2026
-**Compatible con:** Claude (Anthropic), ChatGPT (OpenAI), GitHub Copilot
+**Compatible con:** Claude (Anthropic)
 
 ---
 
@@ -18,7 +18,7 @@
 
 ### 1.1 Propósito
 
-Este documento proporciona **prompts optimizados** para desarrollar el sistema TRANSER - Vortice modernizado con asistencia de IA (Claude, ChatGPT, Copilot). Los prompts están diseñados para:
+Este documento proporciona **prompts optimizados** para desarrollar el sistema TRANSER - Vortice modernizado con asistencia de IA (Claude). Los prompts están diseñados para:
 
 - ✅ Maximizar la calidad del código generado
 - ✅ Mantener consistencia arquitectónica
@@ -60,6 +60,8 @@ El sistema actual está en Oracle Forms 6i (obsoleto) y lo estamos migrando a st
   4. Infrastructure (JPA, External APIs, File System)
 
 - **Módulos principales:**
+  - Tire (Llantas)
+  - Managment (Gestion)
   - Workshop (Taller)
   - Inventory (Inventarios)
   - Purchasing (Compras)
@@ -247,9 +249,50 @@ cambio de estado, agregación de tareas, etc.
 - **Inspector:** Puede validar trabajos antes de cierre
 - **Gerente:** Solo lectura de todas las OTs
 
+# TAREA: Generar DDL Optimizado y Mapeo de Migración (Oracle to PostgreSQL)
+
+## Contexto de Origen
+- **Base de Datos Origen:** Oracle 11g
+- **Esquema/Tabla Origen:** [Nombre de la tabla en Oracle]
+- **DDL Original:**
+```sql
+[Pegar DDL de Oracle aquí]
+
 ## Petición
 [Seguir el prompt de arriba]
 ```
+### 3.1.3 Migración de Datos y Optimización de DDL (NUEVO)
+Este prompt permite transformar la estructura legacy de Oracle a una estructura optimizada en PostgreSQL, aprovechando las capacidades de la versión 18.
+# TAREA: Generar DDL Optimizado y Mapeo de Migración (Oracle -> PostgreSQL)
+
+## Contexto de Origen (Legacy)
+- Base de Datos: Oracle 11g
+- Tabla/Esquema: [NOMBRE_TABLA]
+- DDL Original:
+
+[PEGAR AQUÍ EL DDL DE ORACLE]
+
+### Petición
+- Actúa como un experto DBRE (Database Reliability Engineering). Analiza el DDL de Oracle y genera una propuesta optimizada para PostgreSQL 18:
+
+- Mapeo de Tipos de Datos: Convierte tipos Oracle (NUMBER, VARCHAR2, DATE) a los tipos más eficientes de PostgreSQL (INT8, NUMERIC, VARCHAR, TIMESTAMPT).
+
+- Optimización de PKs: Transforma IDs numéricos de Oracle a UUIDs si la entidad es un Aggregate Root.
+
+- Mapeo de Columnas (Mapping): Crea una tabla de equivalencias [Columna Oracle] -> [Columna PostgreSQL].
+
+### Script DDL Final: Genera el SQL de creación incluyendo:
+
+- Restricciones (Check constraints).
+
+- Índices sugeridos (B-Tree o GIN).
+
+- Comentarios de tabla y columna.
+
+- Configuración de Soft Delete (columna deleted_at).
+
+- Lógica de Transformación: Indica si algún campo requiere limpieza (ej. TRIM de espacios en blancos comunes en Oracle) o conversión de formato.
+
 
 ### 3.2 FASE: Implementación Backend
 

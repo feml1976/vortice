@@ -21,7 +21,12 @@
       "Bash(curl:*)",
       "Bash(python -m json.tool:*)",
       "Bash(./mvnw test:*)",
-      "Bash(mvnw.cmd test:*)"
+      "Bash(mvnw.cmd test:*)",
+      "Bash(./mvnw clean:*)",
+      "Bash(mvnw.cmd clean compile:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(pkill:*)",
+      "Bash(psql:*)"
     ]
   }
 }

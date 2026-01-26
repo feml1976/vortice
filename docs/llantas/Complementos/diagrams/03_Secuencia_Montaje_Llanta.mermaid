@@ -1,0 +1,108 @@
+---
+title: Secuencia - Montaje de Llanta en Vehículo
+---
+sequenceDiagram
+    actor Operario
+    participant UI as UI React
+    participant API as API Controller
+    participant UseCase as MontarLlantaUseCase
+    participant VehRepo as VehiculoRepository
+    participant LlantaRepo as LlantaRepository
+    participant InvRepo as InventarioRepository
+    participant HistRepo as HistoriaRepository
+    participant DB as PostgreSQL
+
+    Operario->>UI: Seleccionar vehículo
+    UI->>API: GET /api/vehiculos/{placa}
+    API->>VehRepo: findByPlaca(placa)
+    VehRepo->>DB: SELECT * FROM vehiculos_llantas WHERE placa = ?
+    DB-->>VehRepo: Datos del vehículo
+    VehRepo-->>API: Vehiculo
+    API-->>UI: VehiculoDTO con configuración de posiciones
+
+    UI->>UI: Mostrar esquema de llantas del vehículo
+    Operario->>UI: Seleccionar posición vacía
+
+    UI->>API: GET /api/inventario?disponible=true
+    API->>InvRepo: findDisponibles()
+    InvRepo->>DB: SELECT * FROM inventario
+    DB-->>InvRepo: Lista de llantas disponibles
+    InvRepo-->>API: List<Llanta>
+    API-->>UI: List<LlantaInventarioDTO>
+
+    Operario->>UI: Seleccionar llanta del inventario
+    Operario->>UI: Ingresar datos de montaje
+    Note over Operario,UI: - Kilometraje actual<br/>- Fecha instalación
+
+    UI->>UI: Validaciones del lado cliente
+    Note over UI: - KM >= KM actual vehículo<br/>- Fecha >= fecha actual<br/>- Posición no ocupada
+
+    UI->>API: POST /api/llantas/montar
+    Note over UI,API: Request Body:<br/>{<br/>  llantaId: {numero, grupo},<br/>  placa: "ABC123",<br/>  posicion: 3,<br/>  kilometraje: 85000,<br/>  fecha: "2026-01-20"<br/>}
+
+    API->>UseCase: execute(comando)
+
+    %% Validaciones
+    UseCase->>VehRepo: findByPlaca(placa)
+    VehRepo->>DB: SELECT
+    DB-->>VehRepo: Vehiculo
+    VehRepo-->>UseCase: Vehiculo
+
+    UseCase->>UseCase: validarVehiculoActivo()
+    
+    UseCase->>LlantaRepo: existeLlantaEnPosicion(placa, posicion)
+    LlantaRepo->>DB: SELECT FROM llantas WHERE vehiculo=? AND posicion=?
+    DB-->>LlantaRepo: Empty
+    LlantaRepo-->>UseCase: false (posición libre)
+
+    UseCase->>InvRepo: findByLlantaId(llantaId)
+    InvRepo->>DB: SELECT FROM inventario WHERE llanta=? AND grupo=?
+    DB-->>InvRepo: Llanta en inventario
+    InvRepo-->>UseCase: Llanta
+
+    UseCase->>UseCase: validarKilometraje(km >= kmActualVehiculo)
+    UseCase->>UseCase: validarFecha(fecha >= fechaActual)
+
+    %% Transacción de montaje
+    UseCase->>DB: BEGIN TRANSACTION
+
+    %% 1. Eliminar de inventario
+    UseCase->>InvRepo: eliminar(llantaId)
+    InvRepo->>DB: DELETE FROM inventario WHERE llanta=? AND grupo=?
+    DB-->>InvRepo: 1 row affected
+
+    %% 2. Crear llanta activa
+    UseCase->>LlantaRepo: crear(llantaActiva)
+    LlantaRepo->>DB: INSERT INTO llantas VALUES (...)
+    DB-->>LlantaRepo: Success
+
+    %% 3. Crear registro en historia
+    UseCase->>HistRepo: crear(historia)
+    HistRepo->>DB: INSERT INTO historia VALUES (...)
+    DB-->>HistRepo: Success
+
+    %% 4. Actualizar kilometraje del vehículo
+    UseCase->>VehRepo: actualizarKilometraje(placa, km)
+    VehRepo->>DB: UPDATE vehiculos_llantas SET kilomact=? WHERE placa=?
+    DB-->>VehRepo: Success
+
+    %% 5. Inicializar contador de kilómetros de la llanta
+    UseCase->>DB: INSERT INTO kms_recorrido_llantas
+    DB-->>UseCase: Success
+
+    UseCase->>DB: COMMIT TRANSACTION
+
+    UseCase-->>API: Result.success(MontajeDTO)
+    API-->>UI: 200 OK - MontajeDTO
+
+    UI->>UI: Mostrar confirmación
+    UI->>UI: Actualizar vista del vehículo
+
+    %% Envío de notificación
+    API->>API: Publicar evento DomainEvent
+    Note over API: LlantaMontadaEvent<br/>para auditoría y notificaciones
+
+    UI-->>Operario: ✓ Llanta montada exitosamente
+
+    %% Caso de error
+    Note over UseCase,DB: En caso de error en cualquier paso:<br/>ROLLBACK TRANSACTION<br/>Retornar Result.failure(error)

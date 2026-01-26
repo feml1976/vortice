@@ -1,0 +1,151 @@
+---
+title: Secuencia - Registro de Muestreo de Llantas
+---
+sequenceDiagram
+    actor Operario
+    participant UI as UI React
+    participant API as API Controller
+    participant UseCase as RegistrarMuestreoUseCase
+    participant LlantaRepo as LlantaRepository
+    participant MuestreoRepo as MuestreoRepository
+    participant FichaRepo as FichaTecnicaRepository
+    participant AlertaSvc as AlertaService
+    participant DB as PostgreSQL
+
+    Operario->>UI: Ir a módulo de muestreo
+    UI->>API: GET /api/vehiculos?operando=true
+    API-->>UI: Lista de vehículos operando
+
+    Operario->>UI: Seleccionar vehículo (placa)
+    
+    UI->>API: GET /api/llantas/activas/{placa}
+    API->>LlantaRepo: findActivasByVehiculo(placa)
+    LlantaRepo->>DB: SELECT l.*, f.*, m.* FROM llantas l<br/>JOIN fichatec f ON l.ficha = f.codigo<br/>LEFT JOIN muestreo m ON l.llanta = m.llanta
+    DB-->>LlantaRepo: Llantas activas con último muestreo
+    LlantaRepo-->>API: List<LlantaActivaConMuestreo>
+    API-->>UI: List<LlantaMuestreoDTO>
+
+    UI->>UI: Renderizar grilla de llantas del vehículo
+    Note over UI: Mostrar por cada llanta:<br/>- Posición<br/>- Número de llanta<br/>- Último muestreo (fecha, prof, KM)<br/>- Profundidades iniciales
+
+    Operario->>UI: Ingresar datos del vehículo
+    Note over Operario,UI: - Kilometraje actual del vehículo<br/>- Fecha del muestreo
+
+    loop Para cada llanta en el vehículo
+        Operario->>UI: Ingresar profundidades
+        Note over Operario,UI: - PI (Profundidad Interna)<br/>- PC (Profundidad Central)<br/>- PD (Profundidad Derecha)<br/>- Presión (PSI)
+
+        UI->>UI: Validaciones en tiempo real
+        Note over UI: - Prof <= Prof_Inicial<br/>- Prof >= 0<br/>- Calcular promedio<br/>- Mostrar % desgaste<br/>- Color según criticidad
+    end
+
+    Operario->>UI: Enviar muestreo completo
+
+    UI->>UI: Validaciones finales
+    Note over UI: - KM >= KM instalación (todas las llantas)<br/>- Fecha >= fecha instalación<br/>- Todas las profundidades válidas
+
+    UI->>API: POST /api/muestreos/batch
+    Note over UI,API: Request Body:<br/>{<br/>  placa: "ABC123",<br/>  kilometraje: 95000,<br/>  fecha: "2026-01-20",<br/>  muestreos: [<br/>    {llantaId, PI, PC, PD, presion},<br/>    ...<br/>  ]<br/>}
+
+    API->>UseCase: execute(comando)
+
+    UseCase->>LlantaRepo: validarTodasLlantasPertenecenAVehiculo(placa, llantaIds)
+    LlantaRepo->>DB: SELECT COUNT
+    DB-->>LlantaRepo: count
+    LlantaRepo-->>UseCase: boolean
+
+    UseCase->>DB: BEGIN TRANSACTION
+
+    loop Para cada muestreo en el batch
+        
+        %% Obtener llanta y ficha técnica
+        UseCase->>LlantaRepo: findById(llantaId)
+        LlantaRepo->>DB: SELECT FROM llantas
+        DB-->>LlantaRepo: Llanta
+        LlantaRepo-->>UseCase: Llanta
+
+        UseCase->>FichaRepo: findById(llanta.fichaId)
+        FichaRepo->>DB: SELECT FROM fichatec
+        DB-->>FichaRepo: FichaTecnica
+        FichaRepo-->>UseCase: FichaTecnica
+
+        %% Validaciones de negocio
+        UseCase->>UseCase: validarKilometraje(km >= llanta.kmInstalacion)
+        UseCase->>UseCase: validarProfundidades(PI,PC,PD <= profIniciales)
+        UseCase->>UseCase: validarFecha(fecha >= llanta.fechaInstalacion)
+
+        %% Calcular métricas
+        UseCase->>UseCase: calcularProfundidadPromedio()
+        UseCase->>UseCase: calcularDesgaste()
+        UseCase->>UseCase: calcularKmsRecorridos()
+        UseCase->>UseCase: detectarDesgasteIrregular()
+
+        %% Guardar muestreo actual
+        UseCase->>MuestreoRepo: crear(muestreo)
+        MuestreoRepo->>DB: INSERT INTO muestreo VALUES (...)
+        DB-->>MuestreoRepo: Success
+
+        %% Guardar en histórico
+        UseCase->>MuestreoRepo: crearHistorico(muestreo)
+        MuestreoRepo->>DB: INSERT INTO histomues VALUES (...)
+        DB-->>MuestreoRepo: Success
+
+        %% Actualizar contador de kilómetros
+        UseCase->>DB: UPDATE kms_recorrido_llantas<br/>SET kmrl_kmsrecorrido_nb = kmrl_kmsrecorrido_nb + (km_actual - km_instalacion)
+        DB-->>UseCase: Success
+
+        %% Análisis de alertas
+        alt Profundidad < Límite Legal (1.6mm)
+            UseCase->>AlertaSvc: generarAlerta(DESGASTE_CRITICO, llantaId)
+            AlertaSvc->>DB: INSERT INTO alertas
+            DB-->>AlertaSvc: Success
+            AlertaSvc-->>UseCase: Alerta creada
+        end
+
+        alt Desgaste irregular detectado
+            UseCase->>AlertaSvc: generarAlerta(DESGASTE_IRREGULAR, llantaId)
+            AlertaSvc->>DB: INSERT INTO alertas
+            DB-->>AlertaSvc: Success
+            AlertaSvc-->>UseCase: Alerta creada
+        end
+
+        alt Presión fuera de rango (80-130 PSI)
+            UseCase->>AlertaSvc: generarAlerta(PRESION_INCORRECTA, llantaId)
+            AlertaSvc->>DB: INSERT INTO alertas
+            DB-->>AlertaSvc: Success
+            AlertaSvc-->>UseCase: Alerta creada
+        end
+
+    end
+
+    UseCase->>DB: COMMIT TRANSACTION
+
+    %% Calcular proyecciones de vida útil
+    UseCase->>UseCase: calcularProyeccionVidaUtil()
+    Note over UseCase: Por cada llanta:<br/>- KMs esperados restantes<br/>- Días estimados restantes<br/>- Fecha estimada de reemplazo
+
+    UseCase-->>API: Result.success(MuestreoResultDTO)
+    Note over UseCase,API: Incluye:<br/>- Muestreos guardados<br/>- Alertas generadas<br/>- Proyecciones
+
+    API-->>UI: 200 OK - MuestreoResultDTO
+
+    UI->>UI: Procesar respuesta
+
+    alt Hay alertas críticas
+        UI->>UI: Mostrar modal con alertas
+        Note over UI: Destacar llantas que requieren<br/>atención inmediata (rojo)
+        UI-->>Operario: ⚠️ Alertas de llantas críticas
+    end
+
+    UI->>UI: Actualizar vista con resultados
+    UI->>UI: Mostrar resumen de muestreo
+    Note over UI: - Total llantas muestreadas<br/>- Alertas generadas<br/>- Proyecciones de vida útil
+
+    UI-->>Operario: ✓ Muestreo registrado exitosamente
+
+    %% Generar reporte
+    Operario->>UI: Descargar reporte de muestreo
+    UI->>API: GET /api/muestreos/reporte/{vehiculo}/{fecha}
+    API-->>UI: PDF con resultados del muestreo
+
+    UI-->>Operario: 📄 Reporte descargado

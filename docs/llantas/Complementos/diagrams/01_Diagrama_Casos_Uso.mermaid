@@ -1,0 +1,111 @@
+---
+title: Sistema de Gestión de Llantas - Casos de Uso Principal
+---
+graph TB
+    subgraph Actores
+        JT[Jefe de Taller]
+        OP[Operario de Taller]
+        AF[Administrador de Flota]
+        ALM[Almacenista]
+        SYS[Sistema Externo]
+    end
+
+    subgraph "Gestión de Maestros"
+        UC01[UC-01: Gestionar Fichas Técnicas]
+        UC02[UC-02: Gestionar Proveedores]
+        UC03[UC-03: Gestionar Vehículos]
+        UC04[UC-04: Gestionar Catálogos]
+    end
+
+    subgraph "Gestión de Inventario"
+        UC05[UC-05: Registrar Compra de Llantas]
+        UC06[UC-06: Consultar Inventario]
+        UC07[UC-07: Gestionar Ubicaciones]
+        UC08[UC-08: Registrar Reencauche]
+    end
+
+    subgraph "Operaciones en Vehículos"
+        UC09[UC-09: Montar Llanta en Vehículo]
+        UC10[UC-10: Desmontar Llanta]
+        UC11[UC-11: Rotar Llantas]
+        UC12[UC-12: Registrar Muestreo]
+    end
+
+    subgraph "Gestión de Bajas"
+        UC13[UC-13: Evaluar Llanta en Intermedio]
+        UC14[UC-14: Dar de Baja Llanta]
+        UC15[UC-15: Reversar Baja]
+    end
+
+    subgraph "Consultas y Reportes"
+        UC16[UC-16: Consultar Historia de Llanta]
+        UC17[UC-17: Reporte de Llantas Activas]
+        UC18[UC-18: Reporte de Consumo]
+        UC19[UC-19: Análisis de Rendimiento]
+        UC20[UC-20: Proyección de Compras]
+        UC21[UC-21: Dashboard de KPIs]
+    end
+
+    subgraph "Alertas y Notificaciones"
+        UC22[UC-22: Generar Alertas de Desgaste]
+        UC23[UC-23: Programar Muestreos]
+        UC24[UC-24: Alertas de Inventario Bajo]
+    end
+
+    %% Relaciones Jefe de Taller
+    JT --> UC01
+    JT --> UC02
+    JT --> UC03
+    JT --> UC04
+    JT --> UC09
+    JT --> UC10
+    JT --> UC11
+    JT --> UC14
+    JT --> UC15
+    JT --> UC19
+    JT --> UC20
+    JT --> UC21
+
+    %% Relaciones Operario
+    OP --> UC09
+    OP --> UC10
+    OP --> UC11
+    OP --> UC12
+    OP --> UC13
+
+    %% Relaciones Administrador de Flota
+    AF --> UC16
+    AF --> UC17
+    AF --> UC18
+    AF --> UC19
+    AF --> UC20
+    AF --> UC21
+
+    %% Relaciones Almacenista
+    ALM --> UC05
+    ALM --> UC06
+    ALM --> UC07
+    ALM --> UC08
+    ALM --> UC24
+
+    %% Sistema
+    SYS -.-> UC22
+    SYS -.-> UC23
+    SYS -.-> UC24
+
+    %% Relaciones Include
+    UC09 -.->|include| UC06
+    UC10 -.->|include| UC13
+    UC12 -.->|include| UC22
+    UC13 -.->|include| UC08
+    UC13 -.->|include| UC14
+
+    %% Relaciones Extend
+    UC09 -.->|extend| UC11
+    UC18 -.->|extend| UC20
+
+    style JT fill:#e1f5ff
+    style OP fill:#fff4e1
+    style AF fill:#f0e1ff
+    style ALM fill:#e1ffe1
+    style SYS fill:#ffe1e1

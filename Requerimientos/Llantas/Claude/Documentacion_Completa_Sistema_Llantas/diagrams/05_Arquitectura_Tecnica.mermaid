@@ -1,0 +1,133 @@
+---
+title: Arquitectura Técnica - Sistema de Gestión de Llantas (Migración)
+---
+graph TB
+    subgraph "Frontend Layer - React 18 + TypeScript"
+        UI[React SPA]
+        
+        subgraph "UI Components - Material-UI"
+            PAGES[Pages/Views]
+            COMPS[Reusable Components]
+            FORMS[Form Components]
+        end
+        
+        subgraph "State Management"
+            REDUX[Redux Toolkit]
+            RTK[RTK Query - API Caching]
+        end
+        
+        subgraph "Routing & Navigation"
+            ROUTER[React Router v6]
+        end
+    end
+
+    subgraph "API Gateway Layer"
+        GATEWAY[Spring Cloud Gateway]
+        AUTH[Spring Security + JWT]
+        RATELIMIT[Rate Limiting]
+    end
+
+    subgraph "Backend Layer - Spring Boot 3.5 + Java 21"
+        
+        subgraph "Presentation Layer"
+            CTRL1[Controllers REST]
+            DTO[DTOs - Mappers]
+            VALID[Bean Validation]
+        end
+        
+        subgraph "Application Layer"
+            UC[Use Cases / Application Services]
+            MAPPER[Model Mappers]
+            EVENTS[Domain Events]
+        end
+        
+        subgraph "Domain Layer - DDD"
+            ENT[Entities]
+            VO[Value Objects]
+            AGG[Aggregates]
+            DS[Domain Services]
+            REPO_INT[Repository Interfaces]
+        end
+        
+        subgraph "Infrastructure Layer"
+            REPO_IMPL[Repository Implementations]
+            JPA[Spring Data JPA]
+            EXT_API[External APIs Client]
+            FILE[File Storage Service]
+        end
+        
+        subgraph "Cross-Cutting Concerns"
+            LOG[Logging - SLF4J + Logback]
+            CACHE[Redis Cache]
+            METRICS[Micrometer Metrics]
+            HEALTH[Health Checks]
+        end
+    end
+
+    subgraph "Database Layer"
+        PG[(PostgreSQL 18)]
+        FLYWAY[Flyway Migrations]
+    end
+
+    subgraph "External Systems"
+        SIESA[Sistema Contable SIESA]
+        EMAIL[Email Service]
+        SMS[SMS Service]
+        STORAGE[Cloud Storage - S3/Azure Blob]
+    end
+
+    subgraph "DevOps & Monitoring"
+        DOCKER[Docker Containers]
+        K8S[Kubernetes - Opcional]
+        PROM[Prometheus]
+        GRAFANA[Grafana]
+        SONAR[SonarQube]
+        JENKINS[Jenkins CI/CD]
+    end
+
+    %% Flujos principales
+    UI --> GATEWAY
+    GATEWAY --> AUTH
+    AUTH --> CTRL1
+    
+    CTRL1 --> UC
+    UC --> DS
+    DS --> ENT
+    DS --> REPO_INT
+    
+    REPO_INT --> REPO_IMPL
+    REPO_IMPL --> JPA
+    JPA --> PG
+    
+    UC --> EVENTS
+    EVENTS --> EMAIL
+    EVENTS --> SMS
+    
+    REPO_IMPL --> CACHE
+    UC --> EXT_API
+    EXT_API --> SIESA
+    
+    FILE --> STORAGE
+    
+    %% Monitoreo
+    CTRL1 --> METRICS
+    UC --> LOG
+    METRICS --> PROM
+    PROM --> GRAFANA
+    
+    %% CI/CD
+    SONAR --> JENKINS
+    JENKINS --> DOCKER
+
+    %% Estilos
+    classDef frontend fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    classDef backend fill:#6db33f,stroke:#333,stroke-width:2px,color:#000
+    classDef database fill:#336791,stroke:#333,stroke-width:2px,color:#fff
+    classDef external fill:#ff9900,stroke:#333,stroke-width:2px,color:#000
+    classDef devops fill:#2496ed,stroke:#333,stroke-width:2px,color:#fff
+
+    class UI,PAGES,COMPS,FORMS,REDUX,RTK,ROUTER frontend
+    class GATEWAY,AUTH,CTRL1,UC,DS,ENT,REPO_IMPL,JPA backend
+    class PG,FLYWAY database
+    class SIESA,EMAIL,SMS,STORAGE external
+    class DOCKER,K8S,PROM,GRAFANA,JENKINS,SONAR devops
