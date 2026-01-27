@@ -22,6 +22,7 @@ import {
   MenuItem,
   useTheme,
   useMediaQuery,
+  Collapse,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -36,20 +37,36 @@ import {
   Lock as LockIcon,
   ExitToApp as LogoutIcon,
   ChevronLeft as ChevronLeftIcon,
+  TireRepair as TireRepairIcon,
+  ExpandLess,
+  ExpandMore,
 } from '@mui/icons-material';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
 const DRAWER_WIDTH = 260;
 
-interface MenuItem {
+interface SubMenuItem {
   text: string;
   icon: React.ReactElement;
   path: string;
 }
 
+interface MenuItem {
+  text: string;
+  icon: React.ReactElement;
+  path?: string;
+  subItems?: SubMenuItem[];
+}
+
 const menuItems: MenuItem[] = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Taller', icon: <BuildIcon />, path: '/workshop' },
+  {
+    text: 'Taller',
+    icon: <BuildIcon />,
+    subItems: [
+      { text: 'Fichas Técnicas de Llantas', icon: <TireRepairIcon />, path: '/tire/specifications' },
+    ]
+  },
   { text: 'Inventario', icon: <InventoryIcon />, path: '/inventory' },
   { text: 'Compras', icon: <PurchasingIcon />, path: '/purchasing' },
   { text: 'Flota', icon: <FleetIcon />, path: '/fleet' },
@@ -69,6 +86,7 @@ export default function MainLayout() {
 
   const [drawerOpen, setDrawerOpen] = useState(!isMobile);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -87,6 +105,13 @@ export default function MainLayout() {
     if (isMobile) {
       setDrawerOpen(false);
     }
+  };
+
+  const handleToggleMenu = (menuText: string) => {
+    setExpandedMenus((prev) => ({
+      ...prev,
+      [menuText]: !prev[menuText],
+    }));
   };
 
   const handleProfile = () => {
@@ -135,15 +160,47 @@ export default function MainLayout() {
       {/* Menú de navegación */}
       <List>
         {menuItems.map((item) => (
-          <ListItem key={item.path} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigate(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
+          <Box key={item.text}>
+            {/* Ítem de menú principal */}
+            <ListItem disablePadding>
+              <ListItemButton
+                selected={item.path ? location.pathname === item.path : false}
+                onClick={() => {
+                  if (item.path) {
+                    handleNavigate(item.path);
+                  } else if (item.subItems) {
+                    handleToggleMenu(item.text);
+                  }
+                }}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+                {item.subItems && (
+                  expandedMenus[item.text] ? <ExpandLess /> : <ExpandMore />
+                )}
+              </ListItemButton>
+            </ListItem>
+
+            {/* Submenú colapsable */}
+            {item.subItems && (
+              <Collapse in={expandedMenus[item.text]} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {item.subItems.map((subItem) => (
+                    <ListItem key={subItem.path} disablePadding>
+                      <ListItemButton
+                        sx={{ pl: 4 }}
+                        selected={location.pathname === subItem.path}
+                        onClick={() => handleNavigate(subItem.path)}
+                      >
+                        <ListItemIcon>{subItem.icon}</ListItemIcon>
+                        <ListItemText primary={subItem.text} />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </List>
+              </Collapse>
+            )}
+          </Box>
         ))}
       </List>
     </Box>

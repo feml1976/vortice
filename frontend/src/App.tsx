@@ -16,6 +16,9 @@ import ChangePasswordPage from '@/features/auth/pages/ChangePasswordPage';
 // Pages - Dashboard
 import DashboardPage from '@/shared/pages/DashboardPage';
 
+// Pages - Tire Module
+import { TireSpecificationPage } from '@/features/tire';
+
 // Components
 import AuthGuard from '@/features/auth/components/AuthGuard';
 import MainLayout from '@/shared/layouts/MainLayout';
@@ -86,6 +89,9 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/change-password" element={<ChangePasswordPage />} />
+
+              {/* Módulo de Llantas */}
+              <Route path="/tire/specifications" element={<TireSpecificationPage />} />
 
               {/* Módulos (placeholder - a implementar) */}
               <Route path="/workshop" element={<DashboardPage />} />

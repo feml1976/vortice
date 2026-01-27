@@ -239,6 +239,7 @@ CREATE TABLE tire_management.brands (
     code VARCHAR(10) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT true,
+    version INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT REFERENCES users(id),
@@ -254,6 +255,7 @@ CREATE TABLE tire_management.types (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
+    version INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT REFERENCES users(id),
@@ -269,6 +271,7 @@ CREATE TABLE tire_management.tire_references (
     name VARCHAR(100) NOT NULL,
     specifications TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
+    version INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT REFERENCES users(id),
@@ -278,7 +281,7 @@ CREATE TABLE tire_management.tire_references (
 COMMENT ON TABLE tire_management.tire_references IS 'Catálogo de referencias de llantas';
 
 -- Tabla: providers (Proveedores)
-CREATE TABLE tire_management.providers (
+CREATE TABLE tire_management.suppliers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(20) UNIQUE NOT NULL,
     name VARCHAR(200) NOT NULL,
@@ -290,14 +293,15 @@ CREATE TABLE tire_management.providers (
     payment_terms_days INTEGER NOT NULL DEFAULT 30,
     legacy_milenio_code INTEGER,
     is_active BOOLEAN NOT NULL DEFAULT true,
+    version INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT REFERENCES users(id),
     updated_by BIGINT REFERENCES users(id)
 );
 
-COMMENT ON TABLE tire_management.providers IS 'Proveedores de llantas y servicios de reencauche';
-COMMENT ON COLUMN tire_management.providers.contact_info IS 'Información de contacto JSON: {email, phone, position, notes}';
+COMMENT ON TABLE tire_management.suppliers IS 'Proveedores de llantas y servicios de reencauche';
+COMMENT ON COLUMN tire_management.suppliers.contact_info IS 'Información de contacto JSON: {email, phone, position, notes}';
 
 -- Tabla: warehouse_locations (Ubicaciones en bodega)
 CREATE TABLE tire_management.warehouse_locations (
@@ -341,7 +345,7 @@ CREATE TABLE tire_management.tread_compounds (
     current_stock INTEGER NOT NULL DEFAULT 0,
     unit_cost NUMERIC(12,2) NOT NULL,
     purchase_date DATE NOT NULL,
-    provider_id UUID NOT NULL REFERENCES tire_management.providers(id),
+    supplier_id UUID NOT NULL REFERENCES tire_management.suppliers(id),
     invoice_number VARCHAR(50) NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -398,9 +402,9 @@ CREATE TABLE tire_management.technical_specifications (
     last_purchase_unit_price NUMERIC(12,2),
     last_purchase_date DATE,
 
-    main_provider_id UUID REFERENCES tire_management.providers(id),
-    secondary_provider_id UUID REFERENCES tire_management.providers(id),
-    last_used_provider_id UUID REFERENCES tire_management.providers(id),
+    main_supplier_id UUID REFERENCES tire_management.suppliers(id),
+    secondary_supplier_id UUID REFERENCES tire_management.suppliers(id),
+    last_used_supplier_id UUID REFERENCES tire_management.suppliers(id),
 
     weight_kg INTEGER,
 
@@ -455,7 +459,7 @@ CREATE TABLE tire_management.inventory (
 
     purchase_cost NUMERIC(12,2) NOT NULL CHECK (purchase_cost >= 0),
     purchase_date DATE NOT NULL,
-    provider_id UUID NOT NULL REFERENCES tire_management.providers(id),
+    supplier_id UUID NOT NULL REFERENCES tire_management.suppliers(id),
     invoice_number VARCHAR(50) NOT NULL,
 
     is_retreaded BOOLEAN NOT NULL DEFAULT false,
@@ -486,7 +490,7 @@ CREATE TABLE tire_management.active_installations (
 
     purchase_cost NUMERIC(12,2) NOT NULL,
     purchase_date DATE NOT NULL,
-    provider_id UUID NOT NULL REFERENCES tire_management.providers(id),
+    supplier_id UUID NOT NULL REFERENCES tire_management.suppliers(id),
     invoice_number VARCHAR(50) NOT NULL,
 
     is_retreaded BOOLEAN NOT NULL DEFAULT false,
@@ -525,7 +529,7 @@ CREATE TABLE tire_management.intermediate (
 
     evaluation_status tire_management.evaluation_status NOT NULL DEFAULT 'PENDING',
     evaluation_date DATE,
-    evaluation_provider_id UUID REFERENCES tire_management.providers(id),
+    evaluation_supplier_id UUID REFERENCES tire_management.suppliers(id),
     evaluation_notes TEXT,
 
     version INTEGER NOT NULL DEFAULT 1,
@@ -582,7 +586,7 @@ CREATE TABLE tire_management.history_records (
 
     purchase_cost NUMERIC(12,2) NOT NULL,
     purchase_date DATE NOT NULL,
-    provider_id UUID NOT NULL REFERENCES tire_management.providers(id),
+    supplier_id UUID NOT NULL REFERENCES tire_management.suppliers(id),
     invoice_number VARCHAR(50) NOT NULL,
     technical_specification_id UUID NOT NULL REFERENCES tire_management.technical_specifications(id),
 
@@ -838,8 +842,8 @@ BEFORE UPDATE ON tire_management.tire_references
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER set_updated_at_providers
-BEFORE UPDATE ON tire_management.providers
+CREATE TRIGGER set_updated_at_suppliers
+BEFORE UPDATE ON tire_management.suppliers
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
@@ -994,6 +998,10 @@ EXECUTE FUNCTION tire_management.duplicate_sampling_to_history();
 -- =====================================================
 
 -- Vista: Llantas con contadores descompuestos
+-- NOTA: Comentada temporalmente - requiere revisión del esquema
+-- Esta vista intentaba acceder a columnas que no existen en la tabla tires
+-- (purchase_value, purchase_date, supplier_id, invoice_number)
+/*
 CREATE OR REPLACE VIEW tire_management.v_tires_with_counters AS
 SELECT
     t.id,
@@ -1001,9 +1009,7 @@ SELECT
     t.generation,
     tire_management.get_vehicle_count(t.generation) AS vehicle_count,
     tire_management.get_retread_count(t.generation) AS retread_count,
-    t.tire_state,
-    t.purchase_value,
-    t.purchase_date,
+    t.current_state,
     t.technical_specification_id,
     ts.dimension,
     ts.brand_name,
@@ -1011,18 +1017,15 @@ SELECT
     ts.reference_name,
     ts.expected_mileage,
     ts.expected_retreads,
-    t.supplier_id,
-    s.name AS supplier_name,
-    t.invoice_number,
     t.created_at,
     t.updated_at
 FROM tire_management.tires t
 JOIN tire_management.technical_specifications ts ON t.technical_specification_id = ts.id
-LEFT JOIN tire_management.suppliers s ON t.supplier_id = s.id
 WHERE t.deleted_at IS NULL;
 
 COMMENT ON VIEW tire_management.v_tires_with_counters
     IS 'Vista que expone todas las llantas con generation descompuesto en vehicle_count y retread_count. Útil para análisis de vida útil y filtrado por estado de la llanta.';
+*/
 
 -- Vista: Llantas activas con último muestreo
 CREATE OR REPLACE VIEW tire_management.v_active_installations_with_sampling AS

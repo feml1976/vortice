@@ -3,7 +3,6 @@
  */
 
 import { Box, Typography, Paper, Avatar, Chip, Grid, Card, CardContent } from '@mui/material';
-import { Dashboard as DashboardIcon } from '@mui/material';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
 /**
