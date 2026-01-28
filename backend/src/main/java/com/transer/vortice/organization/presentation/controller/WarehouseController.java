@@ -45,7 +45,7 @@ public class WarehouseController {
      * POST /api/v1/warehouses
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<WarehouseResponse> createWarehouse(@Valid @RequestBody CreateWarehouseRequest request) {
         log.info("REST: Solicitud para crear almacén con código: {}", request.getCode());
         WarehouseResponse response = warehouseService.createWarehouse(request);
@@ -59,7 +59,7 @@ public class WarehouseController {
      * PUT /api/v1/warehouses/{id}
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<WarehouseResponse> updateWarehouse(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateWarehouseRequest request) {
@@ -75,7 +75,7 @@ public class WarehouseController {
      * DELETE /api/v1/warehouses/{id}
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<Void> deleteWarehouse(@PathVariable UUID id) {
         log.info("REST: Solicitud para eliminar almacén: {}", id);
         warehouseService.deleteWarehouse(id);
@@ -177,7 +177,7 @@ public class WarehouseController {
      * PATCH /api/v1/warehouses/{id}/active
      */
     @PatchMapping("/{id}/active")
-    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<WarehouseResponse> setWarehouseActive(
             @PathVariable UUID id,
             @RequestParam boolean active) {

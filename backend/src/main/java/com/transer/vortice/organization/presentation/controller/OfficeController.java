@@ -42,7 +42,7 @@ public class OfficeController {
      * POST /api/v1/offices
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN_NATIONAL')")
+    @PreAuthorize("hasRole('ADMIN_NATIONAL') or hasRole('ADMIN')")
     public ResponseEntity<OfficeResponse> createOffice(@Valid @RequestBody CreateOfficeRequest request) {
         log.info("REST: Solicitud para crear oficina con código: {}", request.getCode());
         OfficeResponse response = officeService.createOffice(request);
@@ -56,7 +56,7 @@ public class OfficeController {
      * PUT /api/v1/offices/{id}
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN_NATIONAL')")
+    @PreAuthorize("hasRole('ADMIN_NATIONAL') or hasRole('ADMIN')")
     public ResponseEntity<OfficeResponse> updateOffice(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateOfficeRequest request) {
@@ -72,7 +72,7 @@ public class OfficeController {
      * DELETE /api/v1/offices/{id}
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN_NATIONAL')")
+    @PreAuthorize("hasRole('ADMIN_NATIONAL') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteOffice(@PathVariable UUID id) {
         log.info("REST: Solicitud para eliminar oficina: {}", id);
         officeService.deleteOffice(id);
@@ -129,7 +129,7 @@ public class OfficeController {
      * GET /api/v1/offices/search?q=termino&page=0&size=20
      */
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN_NATIONAL')")
+    @PreAuthorize("hasRole('ADMIN_NATIONAL') or hasRole('ADMIN')")
     public ResponseEntity<Page<OfficeResponse>> searchOffices(
             @RequestParam(required = false) String q,
             Pageable pageable) {
@@ -145,7 +145,7 @@ public class OfficeController {
      * GET /api/v1/offices/{id}/details
      */
     @GetMapping("/{id}/details")
-    @PreAuthorize("hasRole('ADMIN_NATIONAL')")
+    @PreAuthorize("hasRole('ADMIN_NATIONAL') or hasRole('ADMIN')")
     public ResponseEntity<OfficeResponse> getOfficeWithDetails(@PathVariable UUID id) {
         log.debug("REST: Solicitud para obtener detalles de oficina: {}", id);
         OfficeResponse response = officeService.getOfficeWithDetails(id);
@@ -159,7 +159,7 @@ public class OfficeController {
      * PATCH /api/v1/offices/{id}/active
      */
     @PatchMapping("/{id}/active")
-    @PreAuthorize("hasRole('ADMIN_NATIONAL')")
+    @PreAuthorize("hasRole('ADMIN_NATIONAL') or hasRole('ADMIN')")
     public ResponseEntity<OfficeResponse> setOfficeActive(
             @PathVariable UUID id,
             @RequestParam boolean active) {

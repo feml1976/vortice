@@ -45,7 +45,7 @@ public class TireSupplierController {
      * POST /api/v1/tire-suppliers
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<TireSupplierResponse> createTireSupplier(
             @Valid @RequestBody CreateTireSupplierRequest request) {
         log.info("REST: Solicitud para crear proveedor con código: {}", request.getCode());
@@ -60,7 +60,7 @@ public class TireSupplierController {
      * PUT /api/v1/tire-suppliers/{id}
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<TireSupplierResponse> updateTireSupplier(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateTireSupplierRequest request) {
@@ -76,7 +76,7 @@ public class TireSupplierController {
      * DELETE /api/v1/tire-suppliers/{id}
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<Void> deleteTireSupplier(@PathVariable UUID id) {
         log.info("REST: Solicitud para eliminar proveedor: {}", id);
         tireSupplierService.deleteTireSupplier(id);
@@ -178,7 +178,7 @@ public class TireSupplierController {
      * PATCH /api/v1/tire-suppliers/{id}/active
      */
     @PatchMapping("/{id}/active")
-    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<TireSupplierResponse> setSupplierActive(
             @PathVariable UUID id,
             @RequestParam boolean active) {

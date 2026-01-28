@@ -45,7 +45,7 @@ public class WarehouseLocationController {
      * POST /api/v1/warehouse-locations
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('WAREHOUSE_MANAGER', 'ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('WAREHOUSE_MANAGER', 'ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<WarehouseLocationResponse> createWarehouseLocation(
             @Valid @RequestBody CreateWarehouseLocationRequest request) {
         log.info("REST: Solicitud para crear ubicación con código: {}", request.getCode());
@@ -60,7 +60,7 @@ public class WarehouseLocationController {
      * PUT /api/v1/warehouse-locations/{id}
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('WAREHOUSE_MANAGER', 'ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('WAREHOUSE_MANAGER', 'ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<WarehouseLocationResponse> updateWarehouseLocation(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateWarehouseLocationRequest request) {
@@ -76,7 +76,7 @@ public class WarehouseLocationController {
      * DELETE /api/v1/warehouse-locations/{id}
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('WAREHOUSE_MANAGER', 'ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('WAREHOUSE_MANAGER', 'ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<Void> deleteWarehouseLocation(@PathVariable UUID id) {
         log.info("REST: Solicitud para eliminar ubicación: {}", id);
         warehouseLocationService.deleteWarehouseLocation(id);
@@ -165,7 +165,7 @@ public class WarehouseLocationController {
      * PATCH /api/v1/warehouse-locations/{id}/active
      */
     @PatchMapping("/{id}/active")
-    @PreAuthorize("hasAnyRole('WAREHOUSE_MANAGER', 'ADMIN_OFFICE', 'ADMIN_NATIONAL')")
+    @PreAuthorize("hasAnyRole('WAREHOUSE_MANAGER', 'ADMIN_OFFICE', 'ADMIN_NATIONAL', 'ADMIN')")
     public ResponseEntity<WarehouseLocationResponse> setLocationActive(
             @PathVariable UUID id,
             @RequestParam boolean active) {
