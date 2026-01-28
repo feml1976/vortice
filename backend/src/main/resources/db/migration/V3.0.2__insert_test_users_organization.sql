@@ -27,7 +27,7 @@ INSERT INTO users (
   username, email, password_hash,
   first_name, last_name,
   office_id,
-  is_active, is_email_verified,
+  is_active,
   created_at, created_by
 ) VALUES (
   'admin.nacional',
@@ -36,7 +36,6 @@ INSERT INTO users (
   'Admin',
   'Nacional',
   (SELECT id FROM offices WHERE code = 'MAIN' LIMIT 1),
-  true,
   true,
   CURRENT_TIMESTAMP,
   1
@@ -55,7 +54,7 @@ INSERT INTO users (
   username, email, password_hash,
   first_name, last_name,
   office_id,
-  is_active, is_email_verified,
+  is_active,
   created_at, created_by
 ) VALUES (
   'admin.medellin',
@@ -64,7 +63,6 @@ INSERT INTO users (
   'Admin',
   'Medellín',
   (SELECT id FROM offices WHERE code = 'MED' LIMIT 1),
-  true,
   true,
   CURRENT_TIMESTAMP,
   1
@@ -83,7 +81,7 @@ INSERT INTO users (
   username, email, password_hash,
   first_name, last_name,
   office_id,
-  is_active, is_email_verified,
+  is_active,
   created_at, created_by
 ) VALUES (
   'gerente.almacen',
@@ -92,7 +90,6 @@ INSERT INTO users (
   'Gerente',
   'Almacén',
   (SELECT id FROM offices WHERE code = 'MED' LIMIT 1),
-  true,
   true,
   CURRENT_TIMESTAMP,
   1
@@ -111,7 +108,7 @@ INSERT INTO users (
   username, email, password_hash,
   first_name, last_name,
   office_id,
-  is_active, is_email_verified,
+  is_active,
   created_at, created_by
 ) VALUES (
   'admin.cali',
@@ -120,7 +117,6 @@ INSERT INTO users (
   'Admin',
   'Cali',
   (SELECT id FROM offices WHERE code = 'CALI' LIMIT 1),
-  true,
   true,
   CURRENT_TIMESTAMP,
   1
@@ -192,7 +188,7 @@ FROM warehouses WHERE code = 'ALM01' AND office_id = (SELECT id FROM offices WHE
 ON CONFLICT (code, warehouse_id) DO NOTHING;
 
 -- Proveedores para Bogotá
-INSERT INTO tire_suppliers (code, name, nit, contact_name, phone, email, city, office_id, is_active, created_at, created_by)
+INSERT INTO tire_suppliers (code, name, tax_id, contact_name, phone, email, address, office_id, is_active, created_at, created_by)
 VALUES
   ('PROV01', 'Michelin Colombia', '900123456-1', 'Carlos Pérez', '3001234567', 'carlos@michelin.com', 'Bogotá',
    (SELECT id FROM offices WHERE code = 'MAIN'), true, CURRENT_TIMESTAMP, 1),
@@ -203,7 +199,7 @@ VALUES
 ON CONFLICT (code, office_id) DO NOTHING;
 
 -- Proveedores para Medellín
-INSERT INTO tire_suppliers (code, name, nit, contact_name, phone, email, city, office_id, is_active, created_at, created_by)
+INSERT INTO tire_suppliers (code, name, tax_id, contact_name, phone, email, address, office_id, is_active, created_at, created_by)
 VALUES
   ('PROV01', 'Bridgestone Medellín', '800456789-4', 'Juan Ramírez', '3004567890', 'juan@bridgestone.com', 'Medellín',
    (SELECT id FROM offices WHERE code = 'MED'), true, CURRENT_TIMESTAMP, 1),
@@ -212,7 +208,7 @@ VALUES
 ON CONFLICT (code, office_id) DO NOTHING;
 
 -- Proveedores para Cali
-INSERT INTO tire_suppliers (code, name, nit, contact_name, phone, email, city, office_id, is_active, created_at, created_by)
+INSERT INTO tire_suppliers (code, name, tax_id, contact_name, phone, email, address, office_id, is_active, created_at, created_by)
 VALUES
   ('PROV01', 'Yokohama Cali', '700678901-6', 'Pedro Sánchez', '3006789012', 'pedro@yokohama.com', 'Cali',
    (SELECT id FROM offices WHERE code = 'CALI'), true, CURRENT_TIMESTAMP, 1)
