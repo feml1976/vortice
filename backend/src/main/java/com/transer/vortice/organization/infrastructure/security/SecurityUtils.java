@@ -99,7 +99,7 @@ public class SecurityUtils {
      * @return true si el usuario es administrador nacional
      */
     public boolean isNationalAdmin() {
-        return hasRole("ADMIN_NATIONAL");
+        return hasRole("ADMIN_NATIONAL") || hasRole("ADMIN");
     }
 
     /**
@@ -108,7 +108,7 @@ public class SecurityUtils {
      * @return true si el usuario es administrador de oficina
      */
     public boolean isOfficeAdmin() {
-        return hasRole("ADMIN_OFFICE");
+        return hasRole("ADMIN_OFFICE") || hasRole("ADMIN");
     }
 
     /**
