@@ -9,13 +9,13 @@
 -- =====================================================
 
 -- Oficina Medellín
-INSERT INTO offices (code, name, city, is_active)
-VALUES ('MED', 'Medellín', 'Medellín', true)
+INSERT INTO offices (code, name, city, is_active, created_by)
+VALUES ('MED', 'Medellín', 'Medellín', true, 1)
 ON CONFLICT (code) DO NOTHING;
 
 -- Oficina Cali
-INSERT INTO offices (code, name, city, is_active)
-VALUES ('CALI', 'Cali', 'Cali', true)
+INSERT INTO offices (code, name, city, is_active, created_by)
+VALUES ('CALI', 'Cali', 'Cali', true, 1)
 ON CONFLICT (code) DO NOTHING;
 
 -- =====================================================
