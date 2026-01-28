@@ -7,7 +7,7 @@ import com.transer.vortice.tire.application.dto.response.TireTypeResponse;
 import com.transer.vortice.tire.application.mapper.TireSpecificationMapper;
 import com.transer.vortice.tire.domain.repository.TireBrandRepository;
 import com.transer.vortice.tire.domain.repository.TireReferenceRepository;
-import com.transer.vortice.tire.domain.repository.TireSupplierRepository;
+import com.transer.vortice.tire.domain.repository.TireCatalogSupplierRepository;
 import com.transer.vortice.tire.domain.repository.TireTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +33,7 @@ public class TireCatalogService {
     private final TireBrandRepository tireBrandRepository;
     private final TireTypeRepository tireTypeRepository;
     private final TireReferenceRepository tireReferenceRepository;
-    private final TireSupplierRepository tireSupplierRepository;
+    private final TireCatalogSupplierRepository tireCatalogSupplierRepository;
     private final TireSpecificationMapper mapper;
 
     // =====================================================
@@ -145,7 +145,7 @@ public class TireCatalogService {
     public List<TireSupplierResponse> getAllActiveSuppliers() {
         log.info("Obteniendo todos los proveedores activos");
 
-        return tireSupplierRepository.findAllActive().stream()
+        return tireCatalogSupplierRepository.findAllActive().stream()
                 .map(mapper::toSupplierResponse)
                 .collect(Collectors.toList());
     }
@@ -159,7 +159,7 @@ public class TireCatalogService {
     public List<TireSupplierResponse> getAllSuppliers() {
         log.info("Obteniendo todos los proveedores");
 
-        return tireSupplierRepository.findAll().stream()
+        return tireCatalogSupplierRepository.findAll().stream()
                 .map(mapper::toSupplierResponse)
                 .collect(Collectors.toList());
     }

@@ -59,7 +59,7 @@ class TireSpecificationServiceTest {
     private TireReferenceRepository tireReferenceRepository;
 
     @Mock
-    private TireSupplierRepository tireSupplierRepository;
+    private TireCatalogSupplierRepository tireCatalogSupplierRepository;
 
     @Mock
     private TireSpecificationMapper mapper;
@@ -174,7 +174,7 @@ class TireSpecificationServiceTest {
         when(tireBrandRepository.findById(testBrand.getId())).thenReturn(Optional.of(testBrand));
         when(tireTypeRepository.findById(testType.getId())).thenReturn(Optional.of(testType));
         when(tireReferenceRepository.findById(testReference.getId())).thenReturn(Optional.of(testReference));
-        when(tireSupplierRepository.findById(testSupplier.getId())).thenReturn(Optional.of(testSupplier));
+        when(tireCatalogSupplierRepository.findById(testSupplier.getId())).thenReturn(Optional.of(testSupplier));
         when(mapper.toEntity(createRequest)).thenReturn(testSpecification);
         when(codeGeneratorService.generateTireSpecificationCode()).thenReturn("FT-000001");
         when(tireSpecificationRepository.save(any(TireSpecification.class))).thenReturn(testSpecification);
@@ -259,7 +259,7 @@ class TireSpecificationServiceTest {
 
         // Then
         assertThat(response).isNotNull();
-        verify(tireSupplierRepository, never()).findById(any());
+        verify(tireCatalogSupplierRepository, never()).findById(any());
     }
 
     // =====================================================
@@ -389,7 +389,7 @@ class TireSpecificationServiceTest {
         when(tireBrandRepository.findById(testBrand.getId())).thenReturn(Optional.of(testBrand));
         when(tireTypeRepository.findById(testType.getId())).thenReturn(Optional.of(testType));
         when(tireReferenceRepository.findById(testReference.getId())).thenReturn(Optional.of(testReference));
-        when(tireSupplierRepository.findById(testSupplier.getId())).thenReturn(Optional.of(testSupplier));
+        when(tireCatalogSupplierRepository.findById(testSupplier.getId())).thenReturn(Optional.of(testSupplier));
         doNothing().when(mapper).updateEntity(testSpecification, updateRequest);
         when(tireSpecificationRepository.save(any(TireSpecification.class))).thenReturn(testSpecification);
         when(mapper.toResponse(testSpecification)).thenReturn(testResponse);

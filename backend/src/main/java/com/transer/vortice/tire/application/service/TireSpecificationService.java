@@ -41,7 +41,7 @@ public class TireSpecificationService {
     private final TireBrandRepository tireBrandRepository;
     private final TireTypeRepository tireTypeRepository;
     private final TireReferenceRepository tireReferenceRepository;
-    private final TireSupplierRepository tireSupplierRepository;
+    private final TireCatalogSupplierRepository tireCatalogSupplierRepository;
     private final TireSpecificationMapper mapper;
     private final CodeGeneratorService codeGeneratorService;
 
@@ -394,7 +394,7 @@ public class TireSpecificationService {
         if (supplierId == null) {
             return null;
         }
-        return tireSupplierRepository.findById(supplierId)
+        return tireCatalogSupplierRepository.findById(supplierId)
                 .orElseThrow(() -> new NotFoundException("Proveedor de llantas no encontrado con ID: " + supplierId));
     }
 

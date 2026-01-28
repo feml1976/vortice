@@ -34,7 +34,7 @@ class TireCatalogRepositoriesTest extends BaseRepositoryTest {
     private TireReferenceRepository tireReferenceRepository;
 
     @Autowired
-    private TireSupplierRepository tireSupplierRepository;
+    private TireCatalogSupplierRepository tireCatalogSupplierRepository;
 
     @Autowired
     private TestEntityManager entityManager;
@@ -295,7 +295,7 @@ class TireCatalogRepositoriesTest extends BaseRepositoryTest {
     }
 
     // =====================================================
-    // TESTS: TireSupplierRepository
+    // TESTS: TireCatalogSupplierRepository
     // =====================================================
 
     @Test
@@ -310,12 +310,12 @@ class TireCatalogRepositoriesTest extends BaseRepositoryTest {
         supplier.setIsActive(true);
 
         // When
-        TireSupplier saved = tireSupplierRepository.save(supplier);
+        TireSupplier saved = tireCatalogSupplierRepository.save(supplier);
         entityManager.flush();
         entityManager.clear();
 
         // Then
-        Optional<TireSupplier> retrieved = tireSupplierRepository.findById(saved.getId());
+        Optional<TireSupplier> retrieved = tireCatalogSupplierRepository.findById(saved.getId());
         assertThat(retrieved).isPresent();
         assertThat(retrieved.get().getName()).isEqualTo("Proveedor Principal");
         assertThat(retrieved.get().getCode()).isEqualTo("PROV01");
@@ -332,12 +332,12 @@ class TireCatalogRepositoriesTest extends BaseRepositoryTest {
         supplier.setName("Proveedor Secundario");
         supplier.setTaxId("0987654321");
         supplier.setIsActive(true);
-        tireSupplierRepository.save(supplier);
+        tireCatalogSupplierRepository.save(supplier);
         entityManager.flush();
         entityManager.clear();
 
         // When
-        Optional<TireSupplier> found = tireSupplierRepository.findByCode("PROV02");
+        Optional<TireSupplier> found = tireCatalogSupplierRepository.findByCode("PROV02");
 
         // Then
         assertThat(found).isPresent();
@@ -353,20 +353,20 @@ class TireCatalogRepositoriesTest extends BaseRepositoryTest {
         activeSupplier.setName("Proveedor Activo");
         activeSupplier.setTaxId("1111111111");
         activeSupplier.setIsActive(true);
-        tireSupplierRepository.save(activeSupplier);
+        tireCatalogSupplierRepository.save(activeSupplier);
 
         TireSupplier inactiveSupplier = new TireSupplier();
         inactiveSupplier.setCode("PROV02");
         inactiveSupplier.setName("Proveedor Inactivo");
         inactiveSupplier.setTaxId("2222222222");
         inactiveSupplier.setIsActive(false);
-        tireSupplierRepository.save(inactiveSupplier);
+        tireCatalogSupplierRepository.save(inactiveSupplier);
 
         entityManager.flush();
         entityManager.clear();
 
         // When
-        List<TireSupplier> actives = tireSupplierRepository.findAllActive();
+        List<TireSupplier> actives = tireCatalogSupplierRepository.findAllActive();
 
         // Then
         assertThat(actives).hasSize(1);
@@ -405,7 +405,7 @@ class TireCatalogRepositoriesTest extends BaseRepositoryTest {
         supplier.setName("Proveedor Test");
         supplier.setTaxId("1234567890");
         supplier.setIsActive(true);
-        supplier = tireSupplierRepository.save(supplier);
+        supplier = tireCatalogSupplierRepository.save(supplier);
 
         entityManager.flush();
         entityManager.clear();
@@ -414,7 +414,7 @@ class TireCatalogRepositoriesTest extends BaseRepositoryTest {
         TireBrand retrievedBrand = tireBrandRepository.findById(brand.getId()).orElseThrow();
         TireType retrievedType = tireTypeRepository.findById(type.getId()).orElseThrow();
         TireReference retrievedRef = tireReferenceRepository.findById(reference.getId()).orElseThrow();
-        TireSupplier retrievedSupplier = tireSupplierRepository.findById(supplier.getId()).orElseThrow();
+        TireSupplier retrievedSupplier = tireCatalogSupplierRepository.findById(supplier.getId()).orElseThrow();
 
         // Then
         assertThat(retrievedBrand.getId()).isNotNull();

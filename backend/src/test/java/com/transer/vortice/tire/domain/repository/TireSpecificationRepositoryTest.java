@@ -44,7 +44,7 @@ class TireSpecificationRepositoryTest extends BaseRepositoryTest {
     private TireReferenceRepository tireReferenceRepository;
 
     @Autowired
-    private TireSupplierRepository tireSupplierRepository;
+    private TireCatalogSupplierRepository tireCatalogSupplierRepository;
 
     @Autowired
     private TestEntityManager entityManager;
@@ -82,7 +82,7 @@ class TireSpecificationRepositoryTest extends BaseRepositoryTest {
         testSupplier.setName("Proveedor Principal");
         testSupplier.setTaxId("1234567890");
         testSupplier.setIsActive(true);
-        testSupplier = tireSupplierRepository.save(testSupplier);
+        testSupplier = tireCatalogSupplierRepository.save(testSupplier);
 
         // Crear especificación de prueba
         testSpecification = new TireSpecification();

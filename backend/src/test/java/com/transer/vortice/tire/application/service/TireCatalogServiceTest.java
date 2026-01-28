@@ -11,7 +11,7 @@ import com.transer.vortice.tire.domain.model.catalog.TireSupplier;
 import com.transer.vortice.tire.domain.model.catalog.TireType;
 import com.transer.vortice.tire.domain.repository.TireBrandRepository;
 import com.transer.vortice.tire.domain.repository.TireReferenceRepository;
-import com.transer.vortice.tire.domain.repository.TireSupplierRepository;
+import com.transer.vortice.tire.domain.repository.TireCatalogSupplierRepository;
 import com.transer.vortice.tire.domain.repository.TireTypeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,7 +47,7 @@ class TireCatalogServiceTest {
     private TireReferenceRepository tireReferenceRepository;
 
     @Mock
-    private TireSupplierRepository tireSupplierRepository;
+    private TireCatalogSupplierRepository tireCatalogSupplierRepository;
 
     @Mock
     private TireSpecificationMapper mapper;
@@ -337,7 +337,7 @@ class TireCatalogServiceTest {
     void shouldGetAllActiveSuppliers() {
         // Given
         List<TireSupplier> activeSuppliers = List.of(activeSupplier);
-        when(tireSupplierRepository.findAllActive()).thenReturn(activeSuppliers);
+        when(tireCatalogSupplierRepository.findAllActive()).thenReturn(activeSuppliers);
         when(mapper.toSupplierResponse(activeSupplier)).thenReturn(supplierResponse);
 
         // When
@@ -348,7 +348,7 @@ class TireCatalogServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Proveedor Activo");
 
-        verify(tireSupplierRepository, times(1)).findAllActive();
+        verify(tireCatalogSupplierRepository, times(1)).findAllActive();
         verify(mapper, times(1)).toSupplierResponse(activeSupplier);
     }
 
@@ -361,7 +361,7 @@ class TireCatalogServiceTest {
         inactiveSupplierResponse.setId(inactiveSupplier.getId());
         inactiveSupplierResponse.setName("Proveedor Inactivo");
 
-        when(tireSupplierRepository.findAll()).thenReturn(allSuppliers);
+        when(tireCatalogSupplierRepository.findAll()).thenReturn(allSuppliers);
         when(mapper.toSupplierResponse(activeSupplier)).thenReturn(supplierResponse);
         when(mapper.toSupplierResponse(inactiveSupplier)).thenReturn(inactiveSupplierResponse);
 
@@ -372,7 +372,7 @@ class TireCatalogServiceTest {
         assertThat(result).isNotNull();
         assertThat(result).hasSize(2);
 
-        verify(tireSupplierRepository, times(1)).findAll();
+        verify(tireCatalogSupplierRepository, times(1)).findAll();
         verify(mapper, times(2)).toSupplierResponse(any(TireSupplier.class));
     }
 
@@ -380,7 +380,7 @@ class TireCatalogServiceTest {
     @DisplayName("Debe retornar lista vacía cuando no hay proveedores activos")
     void shouldReturnEmptyListWhenNoActiveSuppliers() {
         // Given
-        when(tireSupplierRepository.findAllActive()).thenReturn(List.of());
+        when(tireCatalogSupplierRepository.findAllActive()).thenReturn(List.of());
 
         // When
         List<TireSupplierResponse> result = tireCatalogService.getAllActiveSuppliers();
@@ -389,7 +389,7 @@ class TireCatalogServiceTest {
         assertThat(result).isNotNull();
         assertThat(result).isEmpty();
 
-        verify(tireSupplierRepository, times(1)).findAllActive();
+        verify(tireCatalogSupplierRepository, times(1)).findAllActive();
         verify(mapper, never()).toSupplierResponse(any());
     }
 
@@ -404,7 +404,7 @@ class TireCatalogServiceTest {
         when(tireBrandRepository.findAllActive()).thenReturn(List.of(activeBrand));
         when(tireTypeRepository.findAllActive()).thenReturn(List.of(activeType));
         when(tireReferenceRepository.findAllActive()).thenReturn(List.of(activeReference));
-        when(tireSupplierRepository.findAllActive()).thenReturn(List.of(activeSupplier));
+        when(tireCatalogSupplierRepository.findAllActive()).thenReturn(List.of(activeSupplier));
         when(mapper.toBrandResponse(any())).thenReturn(brandResponse);
         when(mapper.toTypeResponse(any())).thenReturn(typeResponse);
         when(mapper.toReferenceResponse(any())).thenReturn(referenceResponse);
@@ -425,6 +425,6 @@ class TireCatalogServiceTest {
         verify(tireBrandRepository, times(1)).findAllActive();
         verify(tireTypeRepository, times(1)).findAllActive();
         verify(tireReferenceRepository, times(1)).findAllActive();
-        verify(tireSupplierRepository, times(1)).findAllActive();
+        verify(tireCatalogSupplierRepository, times(1)).findAllActive();
     }
 }

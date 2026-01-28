@@ -10,7 +10,7 @@
 -- TABLA: offices (Oficinas/Sedes)
 -- Descripción: Representa cada sede u oficina de la empresa
 -- ============================================================================
-CREATE TABLE offices (
+CREATE TABLE IF NOT EXISTS offices (
     -- Primary Key
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -41,10 +41,10 @@ CREATE TABLE offices (
 );
 
 -- Índices
-CREATE INDEX idx_offices_code ON offices(code) WHERE deleted_at IS NULL;
-CREATE INDEX idx_offices_city ON offices(city) WHERE deleted_at IS NULL;
-CREATE INDEX idx_offices_active ON offices(is_active) WHERE deleted_at IS NULL;
-CREATE INDEX idx_offices_created_at ON offices(created_at);
+CREATE INDEX IF NOT EXISTS idx_offices_code ON offices(code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_offices_city ON offices(city) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_offices_active ON offices(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_offices_created_at ON offices(created_at);
 
 -- Comentarios
 COMMENT ON TABLE offices IS 'Sedes u oficinas de la empresa';
@@ -58,7 +58,7 @@ COMMENT ON COLUMN offices.version IS 'Versión para optimistic locking';
 -- TABLA: warehouses (Almacenes)
 -- Descripción: Almacenes dentro de una oficina
 -- ============================================================================
-CREATE TABLE warehouses (
+CREATE TABLE IF NOT EXISTS warehouses (
     -- Primary Key
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -90,10 +90,10 @@ CREATE TABLE warehouses (
 );
 
 -- Índices
-CREATE INDEX idx_warehouses_office ON warehouses(office_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_warehouses_code ON warehouses(office_id, code) WHERE deleted_at IS NULL;
-CREATE INDEX idx_warehouses_active ON warehouses(is_active) WHERE deleted_at IS NULL;
-CREATE INDEX idx_warehouses_created_at ON warehouses(created_at);
+CREATE INDEX IF NOT EXISTS idx_warehouses_office ON warehouses(office_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouses_code ON warehouses(office_id, code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouses_active ON warehouses(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouses_created_at ON warehouses(created_at);
 
 -- Comentarios
 COMMENT ON TABLE warehouses IS 'Almacenes de cada oficina';
@@ -106,7 +106,7 @@ COMMENT ON CONSTRAINT uk_warehouse_office_code ON warehouses IS 'El código de a
 -- TABLA: warehouse_locations (Ubicaciones dentro del Almacén)
 -- Descripción: Ubicaciones físicas específicas dentro de un almacén
 -- ============================================================================
-CREATE TABLE warehouse_locations (
+CREATE TABLE IF NOT EXISTS warehouse_locations (
     -- Primary Key
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -137,10 +137,10 @@ CREATE TABLE warehouse_locations (
 );
 
 -- Índices
-CREATE INDEX idx_warehouse_locations_warehouse ON warehouse_locations(warehouse_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_warehouse_locations_code ON warehouse_locations(warehouse_id, code) WHERE deleted_at IS NULL;
-CREATE INDEX idx_warehouse_locations_active ON warehouse_locations(is_active) WHERE deleted_at IS NULL;
-CREATE INDEX idx_warehouse_locations_created_at ON warehouse_locations(created_at);
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse ON warehouse_locations(warehouse_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_code ON warehouse_locations(warehouse_id, code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_active ON warehouse_locations(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_created_at ON warehouse_locations(created_at);
 
 -- Comentarios
 COMMENT ON TABLE warehouse_locations IS 'Ubicaciones físicas dentro de cada almacén';
@@ -153,7 +153,7 @@ COMMENT ON CONSTRAINT uk_location_warehouse_code ON warehouse_locations IS 'El c
 -- TABLA: tire_suppliers (Proveedores de Llantas)
 -- Descripción: Proveedores de llantas específicos por oficina
 -- ============================================================================
-CREATE TABLE tire_suppliers (
+CREATE TABLE IF NOT EXISTS tire_suppliers (
     -- Primary Key
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -193,11 +193,11 @@ CREATE TABLE tire_suppliers (
 );
 
 -- Índices
-CREATE INDEX idx_tire_suppliers_office ON tire_suppliers(office_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_tire_suppliers_code ON tire_suppliers(office_id, code) WHERE deleted_at IS NULL;
-CREATE INDEX idx_tire_suppliers_active ON tire_suppliers(is_active) WHERE deleted_at IS NULL;
-CREATE INDEX idx_tire_suppliers_tax_id ON tire_suppliers(tax_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_tire_suppliers_created_at ON tire_suppliers(created_at);
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_office ON tire_suppliers(office_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_code ON tire_suppliers(office_id, code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_active ON tire_suppliers(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_tax_id ON tire_suppliers(tax_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_created_at ON tire_suppliers(created_at);
 
 -- Comentarios
 COMMENT ON TABLE tire_suppliers IS 'Proveedores de llantas por oficina';
@@ -211,10 +211,18 @@ COMMENT ON CONSTRAINT uk_supplier_office_code ON tire_suppliers IS 'El código d
 -- MODIFICACIÓN: Agregar office_id a users
 -- Descripción: Todos los usuarios deben estar asignados a una oficina
 -- ============================================================================
-ALTER TABLE users ADD COLUMN office_id UUID REFERENCES offices(id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'office_id'
+    ) THEN
+        ALTER TABLE users ADD COLUMN office_id UUID REFERENCES offices(id);
+    END IF;
+END $$;
 
 -- Índice para performance
-CREATE INDEX idx_users_office ON users(office_id) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_users_office ON users(office_id) WHERE is_active = true;
 
 -- Comentario
 COMMENT ON COLUMN users.office_id IS 'Oficina a la que está asignado el usuario';
@@ -257,7 +265,15 @@ SET office_id = 'a0000000-0000-0000-0000-000000000001'::UUID
 WHERE office_id IS NULL;
 
 -- Hacer obligatorio el campo office_id después de asignar valores
-ALTER TABLE users ALTER COLUMN office_id SET NOT NULL;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'office_id' AND is_nullable = 'YES'
+    ) THEN
+        ALTER TABLE users ALTER COLUMN office_id SET NOT NULL;
+    END IF;
+END $$;
 
 -- ============================================================================
 -- VISTAS ÚTILES
