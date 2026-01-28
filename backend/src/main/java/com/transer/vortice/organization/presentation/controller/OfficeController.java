@@ -29,7 +29,7 @@ import java.util.UUID;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/offices")
+@RequestMapping("/v1/offices")
 @RequiredArgsConstructor
 public class OfficeController {
 
