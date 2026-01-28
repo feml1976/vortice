@@ -125,18 +125,15 @@ class WarehouseTest {
     }
 
     @Test
-    @DisplayName("Normalizar código - convierte a mayúsculas")
+    @DisplayName("Normalizar código - convierte a mayúsculas en constructor")
     void normalizeCode_ConvertsToUpperCase() {
-        // Given
+        // Given/When - el código se normaliza en el constructor
         Warehouse warehouseWithLowerCode = new Warehouse(
             "prin",
             "Almacén",
             officeId,
             "Descripción"
         );
-
-        // When
-        warehouseWithLowerCode.normalizeCode();
 
         // Then
         assertThat(warehouseWithLowerCode.getCode()).isEqualTo("PRIN");
@@ -190,13 +187,10 @@ class WarehouseTest {
     }
 
     @Test
-    @DisplayName("Lifecycle - PrePersist normaliza código")
-    void lifecycle_PrePersist_NormalizesCode() {
-        // Given
+    @DisplayName("Lifecycle - Constructor normaliza código")
+    void lifecycle_Constructor_NormalizesCode() {
+        // Given/When - código se normaliza en el constructor
         Warehouse newWarehouse = new Warehouse("wh-01", "Almacén 01", officeId, null);
-
-        // When
-        newWarehouse.normalizeCode(); // Simula @PrePersist
 
         // Then
         assertThat(newWarehouse.getCode()).isEqualTo("WH-01");

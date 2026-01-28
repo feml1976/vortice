@@ -92,13 +92,10 @@ class OfficeTest {
     }
 
     @Test
-    @DisplayName("Normalizar código - convierte a mayúsculas")
+    @DisplayName("Normalizar código - convierte a mayúsculas en constructor")
     void normalizeCode_ConvertsToUpperCase() {
-        // Given
+        // Given/When - el código se normaliza en el constructor
         Office officeWithLowerCode = new Office("main", "Oficina", "Ciudad", null, null);
-
-        // When
-        officeWithLowerCode.normalizeCode();
 
         // Then
         assertThat(officeWithLowerCode.getCode()).isEqualTo("MAIN");
@@ -166,13 +163,10 @@ class OfficeTest {
     }
 
     @Test
-    @DisplayName("Lifecycle - PrePersist normaliza código")
-    void lifecycle_PrePersist_NormalizesCode() {
-        // Given
+    @DisplayName("Lifecycle - Constructor normaliza código")
+    void lifecycle_Constructor_NormalizesCode() {
+        // Given/When - código se normaliza en el constructor
         Office newOffice = new Office("bog-01", "Oficina Bogotá", "Bogotá", null, null);
-
-        // When
-        newOffice.normalizeCode(); // Simula @PrePersist
 
         // Then
         assertThat(newOffice.getCode()).isEqualTo("BOG-01");

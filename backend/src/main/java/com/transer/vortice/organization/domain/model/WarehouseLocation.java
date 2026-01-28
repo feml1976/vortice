@@ -145,10 +145,10 @@ public class WarehouseLocation extends OrganizationalEntity {
      * Valida que la ubicación esté en un estado válido para operaciones
      */
     public void validateActiveState() {
-        if (isDeleted()) {
-            throw new IllegalStateException("La ubicación está eliminada");
+        if (isDeleted() && getIsActive()) {
+            throw new IllegalStateException("Una ubicación eliminada no puede estar activa");
         }
-        if (!getIsActive()) {
+        if (!isDeleted() && !getIsActive()) {
             throw new IllegalStateException("La ubicación está inactiva");
         }
     }
@@ -157,11 +157,11 @@ public class WarehouseLocation extends OrganizationalEntity {
      * Valida que la ubicación pertenece al almacén especificado
      *
      * @param expectedWarehouseId ID del almacén esperado
-     * @throws IllegalStateException si no pertenece al almacén
+     * @throws IllegalArgumentException si no pertenece al almacén
      */
     public void validateWarehouseOwnership(UUID expectedWarehouseId) {
         if (!belongsToWarehouse(expectedWarehouseId)) {
-            throw new IllegalStateException(
+            throw new IllegalArgumentException(
                 String.format("La ubicación no pertenece al almacén %s", expectedWarehouseId)
             );
         }

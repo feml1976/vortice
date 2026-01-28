@@ -134,10 +134,10 @@ public class Office extends OrganizationalEntity {
      * Valida que la oficina esté en un estado válido para operaciones
      */
     public void validateActiveState() {
-        if (isDeleted()) {
-            throw new IllegalStateException("La oficina está eliminada");
+        if (isDeleted() && getIsActive()) {
+            throw new IllegalStateException("Una oficina eliminada no puede estar activa");
         }
-        if (!getIsActive()) {
+        if (!isDeleted() && !getIsActive()) {
             throw new IllegalStateException("La oficina está inactiva");
         }
     }

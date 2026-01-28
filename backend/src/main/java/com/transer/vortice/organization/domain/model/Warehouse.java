@@ -147,10 +147,10 @@ public class Warehouse extends OrganizationalEntity {
      * Valida que el almacén esté en un estado válido para operaciones
      */
     public void validateActiveState() {
-        if (isDeleted()) {
-            throw new IllegalStateException("El almacén está eliminado");
+        if (isDeleted() && getIsActive()) {
+            throw new IllegalStateException("Un almacén eliminado no puede estar activo");
         }
-        if (!getIsActive()) {
+        if (!isDeleted() && !getIsActive()) {
             throw new IllegalStateException("El almacén está inactivo");
         }
     }
@@ -159,14 +159,23 @@ public class Warehouse extends OrganizationalEntity {
      * Valida que el almacén pertenece a la oficina especificada
      *
      * @param expectedOfficeId ID de la oficina esperada
-     * @throws IllegalStateException si no pertenece a la oficina
+     * @throws IllegalArgumentException si no pertenece a la oficina
      */
     public void validateOfficeOwnership(UUID expectedOfficeId) {
         if (!belongsToOffice(expectedOfficeId)) {
-            throw new IllegalStateException(
+            throw new IllegalArgumentException(
                 String.format("El almacén no pertenece a la oficina %s", expectedOfficeId)
             );
         }
+    }
+
+    /**
+     * Obtiene el nombre de visualización del almacén en formato "CODE - Name"
+     *
+     * @return Nombre de visualización
+     */
+    public String getDisplayName() {
+        return code + " - " + name;
     }
 
     // =====================================================
