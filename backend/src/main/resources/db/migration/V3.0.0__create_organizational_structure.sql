@@ -40,12 +40,6 @@ CREATE TABLE IF NOT EXISTS offices (
     CONSTRAINT chk_office_deleted_inactive CHECK (deleted_at IS NULL OR is_active = false)
 );
 
--- Índices
-CREATE INDEX IF NOT EXISTS idx_offices_code ON offices(code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_offices_city ON offices(city) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_offices_active ON offices(is_active) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_offices_created_at ON offices(created_at);
-
 -- Agregar columnas faltantes si no existen
 DO $$
 BEGIN
@@ -54,6 +48,12 @@ BEGIN
         ALTER TABLE offices ADD COLUMN deleted_by BIGINT REFERENCES users(id);
     END IF;
 END $$;
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_offices_code ON offices(code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_offices_city ON offices(city) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_offices_active ON offices(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_offices_created_at ON offices(created_at);
 
 -- Comentarios
 COMMENT ON TABLE offices IS 'Sedes u oficinas de la empresa';
@@ -98,12 +98,6 @@ CREATE TABLE IF NOT EXISTS warehouses (
     CONSTRAINT chk_warehouse_deleted_inactive CHECK (deleted_at IS NULL OR is_active = false)
 );
 
--- Índices
-CREATE INDEX IF NOT EXISTS idx_warehouses_office ON warehouses(office_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_warehouses_code ON warehouses(office_id, code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_warehouses_active ON warehouses(is_active) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_warehouses_created_at ON warehouses(created_at);
-
 -- Agregar columnas faltantes si no existen
 DO $$
 BEGIN
@@ -112,6 +106,12 @@ BEGIN
         ALTER TABLE warehouses ADD COLUMN deleted_by BIGINT REFERENCES users(id);
     END IF;
 END $$;
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_warehouses_office ON warehouses(office_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouses_code ON warehouses(office_id, code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouses_active ON warehouses(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouses_created_at ON warehouses(created_at);
 
 -- Comentarios
 COMMENT ON TABLE warehouses IS 'Almacenes de cada oficina';
@@ -154,12 +154,6 @@ CREATE TABLE IF NOT EXISTS warehouse_locations (
     CONSTRAINT chk_location_deleted_inactive CHECK (deleted_at IS NULL OR is_active = false)
 );
 
--- Índices
-CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse ON warehouse_locations(warehouse_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_warehouse_locations_code ON warehouse_locations(warehouse_id, code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_warehouse_locations_active ON warehouse_locations(is_active) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_warehouse_locations_created_at ON warehouse_locations(created_at);
-
 -- Agregar columnas faltantes si no existen
 DO $$
 BEGIN
@@ -168,6 +162,12 @@ BEGIN
         ALTER TABLE warehouse_locations ADD COLUMN deleted_by BIGINT REFERENCES users(id);
     END IF;
 END $$;
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse ON warehouse_locations(warehouse_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_code ON warehouse_locations(warehouse_id, code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_active ON warehouse_locations(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_created_at ON warehouse_locations(created_at);
 
 -- Comentarios
 COMMENT ON TABLE warehouse_locations IS 'Ubicaciones físicas dentro de cada almacén';
@@ -219,13 +219,6 @@ CREATE TABLE IF NOT EXISTS tire_suppliers (
     CONSTRAINT chk_supplier_deleted_inactive CHECK (deleted_at IS NULL OR is_active = false)
 );
 
--- Índices
-CREATE INDEX IF NOT EXISTS idx_tire_suppliers_office ON tire_suppliers(office_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_tire_suppliers_code ON tire_suppliers(office_id, code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_tire_suppliers_active ON tire_suppliers(is_active) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_tire_suppliers_tax_id ON tire_suppliers(tax_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_tire_suppliers_created_at ON tire_suppliers(created_at);
-
 -- Agregar columnas faltantes si no existen
 DO $$
 BEGIN
@@ -234,6 +227,13 @@ BEGIN
         ALTER TABLE tire_suppliers ADD COLUMN deleted_by BIGINT REFERENCES users(id);
     END IF;
 END $$;
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_office ON tire_suppliers(office_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_code ON tire_suppliers(office_id, code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_active ON tire_suppliers(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_tax_id ON tire_suppliers(tax_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_tire_suppliers_created_at ON tire_suppliers(created_at);
 
 -- Comentarios
 COMMENT ON TABLE tire_suppliers IS 'Proveedores de llantas por oficina';
