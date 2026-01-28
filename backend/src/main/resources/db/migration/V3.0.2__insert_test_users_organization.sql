@@ -42,9 +42,9 @@ INSERT INTO users (
 )
 ON CONFLICT (email) DO NOTHING;
 
--- Asignar rol ADMIN_NATIONAL
-INSERT INTO user_roles (user_id, role_name)
-SELECT id, 'ADMIN_NATIONAL'
+-- Asignar rol ADMIN (equivalente a ADMIN_NATIONAL)
+INSERT INTO user_roles (user_id, role_id, assigned_by)
+SELECT id, 1, 1  -- role_id 1 = ADMIN
 FROM users
 WHERE email = 'admin.nacional@vortice.com'
 ON CONFLICT DO NOTHING;
@@ -69,9 +69,9 @@ INSERT INTO users (
 )
 ON CONFLICT (email) DO NOTHING;
 
--- Asignar rol ADMIN_OFFICE
-INSERT INTO user_roles (user_id, role_name)
-SELECT id, 'ADMIN_OFFICE'
+-- Asignar rol ADMIN (equivalente a ADMIN_OFFICE)
+INSERT INTO user_roles (user_id, role_id, assigned_by)
+SELECT id, 1, 1  -- role_id 1 = ADMIN
 FROM users
 WHERE email = 'admin.medellin@vortice.com'
 ON CONFLICT DO NOTHING;
@@ -97,8 +97,8 @@ INSERT INTO users (
 ON CONFLICT (email) DO NOTHING;
 
 -- Asignar rol WAREHOUSE_MANAGER
-INSERT INTO user_roles (user_id, role_name)
-SELECT id, 'WAREHOUSE_MANAGER'
+INSERT INTO user_roles (user_id, role_id, assigned_by)
+SELECT id, 4, 1  -- role_id 4 = WAREHOUSE_MANAGER
 FROM users
 WHERE email = 'gerente.almacen@vortice.com'
 ON CONFLICT DO NOTHING;
@@ -123,9 +123,9 @@ INSERT INTO users (
 )
 ON CONFLICT (email) DO NOTHING;
 
--- Asignar rol ADMIN_OFFICE
-INSERT INTO user_roles (user_id, role_name)
-SELECT id, 'ADMIN_OFFICE'
+-- Asignar rol ADMIN (equivalente a ADMIN_OFFICE)
+INSERT INTO user_roles (user_id, role_id, assigned_by)
+SELECT id, 1, 1  -- role_id 1 = ADMIN
 FROM users
 WHERE email = 'admin.cali@vortice.com'
 ON CONFLICT DO NOTHING;

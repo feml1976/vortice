@@ -20,7 +20,7 @@ import java.util.Map;
  *
  * @author Vórtice Development Team
  */
-@Entity
+@Entity(name = "TireCatalogSupplier")
 @Table(name = "suppliers", schema = "tire_management")
 @Getter
 @Setter
