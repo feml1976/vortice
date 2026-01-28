@@ -2,7 +2,6 @@ package com.transer.vortice.organization.domain.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -37,7 +36,6 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class TireSupplier extends OrganizationalEntity {
 
     @NotBlank(message = "El código del proveedor es obligatorio")
