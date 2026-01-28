@@ -116,7 +116,13 @@ Para el requerimiento indicado, responde:
 **J. INTEGRACIÓN CON MÓDULOS EXISTENTES**
 29. ¿Este requerimiento depende de Auth o Users?
 30. ¿Necesita permisos especiales?
-31. ¿Consume catálogos compartidos (shared schema)?
+
+**K. MULTI-SEDE (ARQUITECTURA MULTI-OFICINA)**
+31. ¿Los datos de este requerimiento son globales (compartidos entre oficinas) o específicos por oficina?
+32. Si son específicos por oficina, ¿cómo se determina a qué oficina pertenece un registro?
+33. ¿Se necesita filtrado automático por oficina del usuario (Row-Level Security)?
+34. ¿Hay traslados o movimientos entre oficinas? Si es sí, ¿qué restricciones existen?
+35. ¿Los usuarios con ROLE_ADMIN_NATIONAL pueden ver datos de todas las oficinas?
 
 ---
 

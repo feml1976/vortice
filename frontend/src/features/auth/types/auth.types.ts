@@ -10,6 +10,7 @@ export interface User {
   lastName: string;
   isActive: boolean;
   roles: string[];
+  officeId: string; // UUID de la oficina a la que pertenece el usuario
 }
 
 export interface LoginRequest {

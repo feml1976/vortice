@@ -21,6 +21,49 @@
 
 ---
 
+## ⚠️ PREREQUISITO CRÍTICO: Estructura Organizacional Multi-Sede
+
+**IMPORTANTE:** Antes de implementar cualquier RF del módulo Tire, debe implementarse la estructura organizacional multi-sede.
+
+El sistema debe soportar múltiples sedes/oficinas con la siguiente jerarquía:
+
+```
+EMPRESA (TRANSER)
+    │
+    ├── SEDE/OFICINA 1 (ej: Bogotá)
+    │       │
+    │       ├── ALMACÉN 1 (ej: Almacén Principal)
+    │       │       ├── UBICACIÓN 1 (ej: Estante A1)
+    │       │       └── UBICACIÓN 2 (ej: Estante A2)
+    │       │
+    │       ├── ALMACÉN 2 (ej: Almacén Taller)
+    │       │       └── UBICACIÓN 1 (ej: Zona de Trabajo)
+    │       │
+    │       └── PROVEEDORES (específicos de la sede)
+    │
+    └── SEDE/OFICINA 2 (ej: Medellín)
+            └── ...
+```
+
+### Características Clave:
+- ✅ Cada **usuario** está asignado a UNA sede específica
+- ✅ Los usuarios ven SOLO el inventario de su sede (aislamiento por Row-Level Security)
+- ✅ Las **fichas técnicas** son GLOBALES (compartidas entre todas las sedes)
+- ✅ Los **almacenes, ubicaciones y proveedores** son específicos por sede
+- ✅ Una llanta física en Bogotá es diferente a otra en Medellín (inventarios separados)
+- ✅ Los **traslados entre sedes** requieren proceso especial con aprobación
+- ✅ Los **reportes** pueden ser por sede o consolidados (según rol)
+
+### Roles de Seguridad:
+- **ROLE_ADMIN_NATIONAL:** Acceso a todas las sedes (reportes consolidados)
+- **ROLE_ADMIN_OFFICE:** Administrador de sede específica
+- **ROLE_WAREHOUSE_MANAGER:** Gestión de almacén específico
+- **ROLE_MECHANIC:** Operario de taller (acceso restringido)
+
+**Referencia:** Ver RF-001-EXT para detalles completos de implementación.
+
+---
+
 ## 1. INTRODUCCIÓN
 
 ### 1.1 Propósito del Documento
@@ -300,44 +343,645 @@ El sistema debe permitir el registro y mantenimiento de fichas técnicas para ca
 
 ---
 
-### RF-002: Control de Inventario de Llantas
-**Prioridad:** Alta
+### RF-001-EXT: Gestión de Estructura Organizacional Multi-Sede
+**Prioridad:** Crítica (Prerequisito de TODOS los demás RFs)
 
-**Descripción:**  
-El sistema debe controlar las llantas que están en inventario (bodega) sin montar.
+**Descripción:**
+El sistema debe gestionar la estructura organizacional multi-sede de la empresa, permitiendo que cada oficina opere de forma independiente con sus propios almacenes, ubicaciones y proveedores, mientras comparte catálogos técnicos globales.
+
+**Jerarquía Organizacional:**
+
+```
+┌─────────────────────────────────────────────┐
+│ EMPRESA (TRANSER)                           │
+└──────────────────┬──────────────────────────┘
+                   │
+    ┌──────────────┴──────────────┐
+    │                             │
+┌───▼────────┐            ┌───────▼──────┐
+│ OFICINA 1  │            │  OFICINA 2   │
+│ (Bogotá)   │            │  (Medellín)  │
+└───┬────────┘            └───────┬──────┘
+    │                             │
+    ├── ALMACÉN 1                 ├── ALMACÉN 1
+    │   ├── Ubicación A1          │   └── Ubicación M1
+    │   └── Ubicación A2          │
+    ├── ALMACÉN 2                 └── PROVEEDORES
+    │   └── Ubicación B1              └── Proveedor M-01
+    │
+    └── PROVEEDORES
+        ├── Proveedor B-01
+        └── Proveedor B-02
+```
+
+#### Entidad: Office (Sede/Oficina)
+**Tabla:** `offices`
+
+**Descripción:** Representa cada sede u oficina de la empresa.
+
+**Campos:**
+- `id` (UUID): Identificador único
+- `code` (VARCHAR(10)): Código corto único (ej: "BOG", "MED", "CALI")
+- `name` (VARCHAR(100)): Nombre de la oficina (ej: "Bogotá - Sede Principal")
+- `city` (VARCHAR(50)): Ciudad donde se ubica
+- `address` (TEXT): Dirección física
+- `phone` (VARCHAR(20)): Teléfono de contacto
+- `is_active` (BOOLEAN): Estado de la oficina
+- `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`: Auditoría
+
+**Validaciones:**
+- Código único en el sistema
+- Nombre obligatorio
+- Ciudad obligatoria
+- No se puede eliminar oficina con almacenes o usuarios asociados (soft delete)
+
+**Operaciones CRUD:**
+- Crear nueva oficina
+- Listar oficinas (filtro por activas/inactivas)
+- Editar información de oficina
+- Desactivar oficina (soft delete)
+
+---
+
+#### Entidad: Warehouse (Almacén)
+**Tabla:** `warehouses`
+
+**Descripción:** Representa cada almacén dentro de una oficina. Una oficina puede tener múltiples almacenes (ej: Almacén Principal, Almacén de Taller, Almacén de Reencauche).
+
+**Campos:**
+- `id` (UUID): Identificador único
+- `code` (VARCHAR(10)): Código del almacén (único por oficina)
+- `name` (VARCHAR(100)): Nombre descriptivo
+- `office_id` (UUID): FK a `offices` - oficina a la que pertenece
+- `description` (TEXT): Descripción o propósito del almacén
+- `is_active` (BOOLEAN): Estado del almacén
+- `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`: Auditoría
+
+**Validaciones:**
+- Código único dentro de la oficina (constraint: `uk_warehouse_office_code`)
+- Nombre obligatorio
+- `office_id` debe existir y estar activo
+- No se puede eliminar almacén con llantas asociadas (soft delete)
+
+**Operaciones CRUD:**
+- Crear nuevo almacén en una oficina
+- Listar almacenes de una oficina
+- Editar información de almacén
+- Desactivar almacén (soft delete)
+
+**Regla de Negocio:**
+- Un almacén pertenece a UNA SOLA oficina
+- Los códigos de almacén pueden repetirse entre oficinas (ej: "PRIN" en Bogotá y "PRIN" en Medellín son diferentes)
+
+---
+
+#### Entidad: WarehouseLocation (Ubicación dentro del Almacén)
+**Tabla:** `warehouse_locations`
+
+**Descripción:** Representa ubicaciones físicas específicas dentro de un almacén (ej: estantes, zonas, bahías). Equivalente a la tabla legacy `LOCALIZA` pero ahora asociada a un almacén específico.
+
+**Campos:**
+- `id` (UUID): Identificador único
+- `code` (VARCHAR(10)): Código de la ubicación (único por almacén)
+- `name` (VARCHAR(100)): Nombre descriptivo (ej: "Estante A1", "Zona de Trabajo")
+- `warehouse_id` (UUID): FK a `warehouses` - almacén al que pertenece
+- `description` (TEXT): Descripción adicional
+- `is_active` (BOOLEAN): Estado de la ubicación
+- `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`: Auditoría
+
+**Validaciones:**
+- Código único dentro del almacén (constraint: `uk_location_warehouse_code`)
+- `warehouse_id` debe existir y estar activo
+- No se puede eliminar ubicación con llantas asociadas (soft delete)
+
+**Operaciones CRUD:**
+- Crear nueva ubicación en un almacén
+- Listar ubicaciones de un almacén
+- Editar información de ubicación
+- Desactivar ubicación (soft delete)
+
+**Regla de Negocio:**
+- Una ubicación pertenece a UN SOLO almacén
+- Los códigos de ubicación pueden repetirse entre almacenes
+
+---
+
+#### Entidad: TireSupplier (Proveedor de Llantas)
+**Tabla:** `tire_suppliers`
+
+**Descripción:** Proveedores de llantas específicos por oficina. La tabla legacy `PROVEEDORES_LLANTAS` se transforma en una tabla multi-sede donde cada proveedor está asociado a una oficina.
+
+**Campos:**
+- `id` (UUID): Identificador único
+- `code` (VARCHAR(10)): Código del proveedor (único por oficina)
+- `name` (VARCHAR(100)): Nombre o razón social
+- `tax_id` (VARCHAR(20)): NIT o identificación tributaria
+- `office_id` (UUID): FK a `offices` - oficina a la que pertenece
+- `contact_name` (VARCHAR(100)): Nombre del contacto
+- `email` (VARCHAR(100)): Email del proveedor
+- `phone` (VARCHAR(20)): Teléfono
+- `address` (TEXT): Dirección física
+- `is_active` (BOOLEAN): Estado del proveedor
+- `created_at`, `created_by`, `updated_at`, `updated_by`, `deleted_at`, `deleted_by`: Auditoría
+
+**Validaciones:**
+- Código único dentro de la oficina (constraint: `uk_supplier_office_code`)
+- Nombre y tax_id obligatorios
+- `office_id` debe existir y estar activo
+- Email con formato válido
+- No se puede eliminar proveedor con compras asociadas (soft delete)
+
+**Operaciones CRUD:**
+- Crear nuevo proveedor en una oficina
+- Listar proveedores de una oficina
+- Editar información de proveedor
+- Desactivar proveedor (soft delete)
+
+**Regla de Negocio:**
+- Un proveedor pertenece a UNA SOLA oficina
+- Si un mismo proveedor real opera en múltiples oficinas, debe registrarse por separado en cada una
+- Los códigos de proveedor pueden repetirse entre oficinas
+
+---
+
+#### Modificación a Users (Usuarios)
+**Tabla:** `users` (ya existente, se agrega campo)
+
+**Nuevos Campos:**
+- `office_id` (UUID): FK a `offices` - oficina a la que está asignado el usuario
+
+**Reglas:**
+- Todo usuario DEBE estar asignado a una oficina (campo obligatorio)
+- Los usuarios solo pueden ver datos de su oficina (implementado via Row-Level Security)
+- Excepción: Usuarios con rol `ROLE_ADMIN_NATIONAL` pueden ver todas las oficinas
+
+**Validación:**
+- `office_id` debe existir y estar activo
+- No se puede cambiar la oficina de un usuario si tiene operaciones pendientes
+
+---
+
+#### Seguridad: Row-Level Security (RLS)
+
+**Política de Aislamiento por Oficina:**
+
+Todas las tablas relacionadas con llantas deben implementar políticas RLS:
+
+```sql
+-- Función para obtener office_id del usuario actual
+CREATE OR REPLACE FUNCTION get_user_office_id()
+RETURNS UUID AS $$
+DECLARE
+    v_office_id UUID;
+BEGIN
+    SELECT office_id INTO v_office_id
+    FROM users
+    WHERE id = current_setting('app.current_user_id')::BIGINT;
+    RETURN v_office_id;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Política ejemplo para tire_inventory
+ALTER TABLE tire_inventory ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tire_inventory_office_isolation ON tire_inventory
+    FOR ALL
+    TO authenticated_user
+    USING (
+        -- Admin nacional: acceso a todas las oficinas
+        current_user_has_role('ROLE_ADMIN_NATIONAL')
+        OR
+        -- Usuarios normales: solo su oficina
+        warehouse_id IN (
+            SELECT w.id FROM warehouses w
+            WHERE w.office_id = get_user_office_id()
+              AND w.deleted_at IS NULL
+        )
+    );
+```
+
+**Tablas que requieren RLS:**
+- `warehouses` (filtro por `office_id`)
+- `warehouse_locations` (filtro via `warehouse_id`)
+- `tire_suppliers` (filtro por `office_id`)
+- `tire_inventory` (filtro via `warehouse_id → office_id`)
+- `tire_specifications` (NO requiere RLS, son globales)
+
+---
+
+#### Catálogos Globales vs Específicos de Oficina
+
+**Catálogos GLOBALES (compartidos entre todas las oficinas):**
+- ✅ `tire_brands` (Marcas de llantas)
+- ✅ `tire_types` (Tipos de llantas)
+- ✅ `tire_references` (Referencias)
+- ✅ `tire_specifications` (Fichas técnicas)
+- ✅ `observation_reasons` (Motivos de baja/observaciones)
+
+**Catálogos ESPECÍFICOS por oficina:**
+- 🏢 `warehouses` (Almacenes)
+- 🏢 `warehouse_locations` (Ubicaciones)
+- 🏢 `tire_suppliers` (Proveedores)
+
+**Datos Transaccionales (específicos por oficina):**
+- 🏢 `tire_inventory` (Inventario de llantas)
+- 🏢 `tire_active` (Llantas montadas en vehículos)
+- 🏢 `tire_intermediate` (Llantas desmontadas)
+- 🏢 `tire_retired` (Llantas dadas de baja)
+- 🏢 `tire_history` (Histórico)
+
+---
+
+#### Flujos de Gestión
+
+**1. Creación de Nueva Oficina:**
+```
+Admin Nacional → Crear Office → Crear Warehouse(s) → Crear Locations
+                                ↓
+                        Crear Tire Suppliers
+                                ↓
+                        Asignar Users a la oficina
+```
+
+**2. Consulta de Inventario (Usuario Normal):**
+```
+User autenticado → Sistema obtiene office_id del user
+                → RLS filtra automáticamente warehouse_id de esa oficina
+                → Usuario ve SOLO inventario de su oficina
+```
+
+**3. Reporte Consolidado (Admin Nacional):**
+```
+Admin Nacional → Sistema detecta rol ROLE_ADMIN_NATIONAL
+              → RLS permite acceso a TODAS las oficinas
+              → Reporte incluye datos de todas las sedes
+```
+
+---
+
+#### Endpoints REST Necesarios
+
+**Offices:**
+- `POST /api/offices` - Crear oficina
+- `GET /api/offices` - Listar oficinas
+- `GET /api/offices/{id}` - Obtener oficina por ID
+- `PUT /api/offices/{id}` - Actualizar oficina
+- `DELETE /api/offices/{id}` - Desactivar oficina (soft delete)
+
+**Warehouses:**
+- `POST /api/offices/{officeId}/warehouses` - Crear almacén en oficina
+- `GET /api/offices/{officeId}/warehouses` - Listar almacenes de oficina
+- `GET /api/warehouses/{id}` - Obtener almacén por ID
+- `PUT /api/warehouses/{id}` - Actualizar almacén
+- `DELETE /api/warehouses/{id}` - Desactivar almacén
+
+**WarehouseLocations:**
+- `POST /api/warehouses/{warehouseId}/locations` - Crear ubicación
+- `GET /api/warehouses/{warehouseId}/locations` - Listar ubicaciones
+- `GET /api/warehouse-locations/{id}` - Obtener ubicación por ID
+- `PUT /api/warehouse-locations/{id}` - Actualizar ubicación
+- `DELETE /api/warehouse-locations/{id}` - Desactivar ubicación
+
+**TireSuppliers:**
+- `POST /api/offices/{officeId}/suppliers` - Crear proveedor
+- `GET /api/offices/{officeId}/suppliers` - Listar proveedores de oficina
+- `GET /api/tire-suppliers/{id}` - Obtener proveedor por ID
+- `PUT /api/tire-suppliers/{id}` - Actualizar proveedor
+- `DELETE /api/tire-suppliers/{id}` - Desactivar proveedor
+
+---
+
+#### Componentes Frontend Necesarios
+
+**Selectores Jerárquicos:**
+- `OfficeSelector` - Selector de oficina (solo para admins nacionales)
+- `WarehouseSelector` - Selector de almacén (filtrado por oficina del usuario)
+- `LocationSelector` - Selector de ubicación (filtrado por almacén seleccionado)
+- `SupplierSelector` - Selector de proveedor (filtrado por oficina del usuario)
+
+**Páginas de Gestión:**
+- `/admin/offices` - Gestión de oficinas
+- `/admin/offices/:id/warehouses` - Gestión de almacenes
+- `/admin/warehouses/:id/locations` - Gestión de ubicaciones
+- `/admin/suppliers` - Gestión de proveedores
+
+**Indicador de Contexto:**
+- Mostrar en navbar/header la oficina actual del usuario
+- Para admins nacionales: mostrar filtro de oficina activo
+
+---
+
+#### Migración desde Sistema Legacy
+
+**Estrategia de Migración:**
+
+1. **Fase 1: Crear estructura organizacional**
+   - Crear oficinas basadas en `PARAMETROS_OFICSISTEMA`
+   - Migrar `LOCALIZA` a `warehouse_locations` asociándolas a un warehouse por defecto
+   - Migrar `PROVEEDORES_LLANTAS` a `tire_suppliers` asociándolos a oficina
+
+2. **Fase 2: Migrar datos transaccionales**
+   - Determinar oficina de origen de cada registro (basado en parámetros legacy)
+   - Migrar `INVENTARIO` asociando a warehouse correspondiente
+   - Migrar `LLANTAS`, `INTERMEDIO`, `RETIRADAS`, `HISTORIA`
+
+3. **Fase 3: Actualizar usuarios**
+   - Asignar `office_id` a cada usuario basado en su configuración legacy
+   - Implementar RLS policies
+
+**Script de Migración:**
+```sql
+-- 1. Crear oficina por defecto
+INSERT INTO offices (code, name, city, is_active)
+VALUES ('MAIN', 'Oficina Principal', 'Bogotá', true);
+
+-- 2. Crear almacén por defecto
+INSERT INTO warehouses (code, name, office_id, is_active)
+SELECT 'PRIN', 'Almacén Principal', o.id, true
+FROM offices o WHERE o.code = 'MAIN';
+
+-- 3. Migrar ubicaciones
+INSERT INTO warehouse_locations (code, name, warehouse_id, is_active)
+SELECT
+    l.cod_local,
+    l.descri,
+    (SELECT id FROM warehouses WHERE code = 'PRIN'),
+    CASE WHEN l.estado = 'A' THEN true ELSE false END
+FROM localiza l;
+
+-- 4. Migrar proveedores
+INSERT INTO tire_suppliers (code, name, tax_id, office_id, is_active)
+SELECT
+    p.codigopro,
+    p.nombre,
+    p.nit,
+    (SELECT id FROM offices WHERE code = 'MAIN'),
+    CASE WHEN p.estado = 'A' THEN true ELSE false END
+FROM proveedores_llantas p;
+```
+
+---
+
+#### Testing
+
+**Tests Unitarios:**
+- CRUD de cada entidad (Office, Warehouse, WarehouseLocation, TireSupplier)
+- Validaciones de constraints únicos por oficina
+- Verificación de soft delete
+
+**Tests de Integración:**
+- Flujo completo: crear oficina → almacén → ubicación
+- Verificar que usuarios no puedan ver datos de otras oficinas
+- Verificar que admins nacionales vean todas las oficinas
+
+**Tests de Seguridad:**
+- Verificar políticas RLS
+- Intentar acceder a datos de otra oficina (debe fallar)
+- Verificar permisos por rol
+
+---
+
+### RF-002: Control de Inventario de Llantas (Multi-Sede)
+**Prioridad:** Alta
+**Prerequisito:** RF-001-EXT (Estructura Organizacional)
+
+**Descripción:**
+El sistema debe controlar las llantas que están en inventario (bodega) sin montar. Cada llanta física pertenece a un almacén específico de una oficina, y los usuarios solo pueden ver y gestionar las llantas de su oficina.
+
+**Contexto Multi-Sede:**
+- ✅ Una llanta física en Bogotá es **diferente** a una en Medellín (inventarios separados)
+- ✅ Los usuarios ven SOLO las llantas del almacén de su oficina (filtrado automático por RLS)
+- ✅ Las fichas técnicas son globales (compartidas entre oficinas)
+- ✅ Los proveedores son específicos por oficina
+- ✅ Las ubicaciones pertenecen a almacenes específicos
 
 **Operaciones:**
 1. **Ingreso de llantas nuevas:**
-   - Número de llanta (identificador único)
+   - Número de llanta (identificador único **por oficina**)
    - Grupo (tipo: 000=nueva, 001-009=reencauche)
    - Valor
    - Fecha de ingreso
-   - Proveedor
+   - **Almacén (warehouse_id)** - selector filtrado por oficina del usuario
+   - **Proveedor (supplier_id)** - selector filtrado por oficina del usuario
+   - **Ubicación (location_id)** - selector filtrado por almacén seleccionado
    - Número de factura
-   - Ficha técnica asociada
-   - Localización en bodega
+   - Ficha técnica asociada (catálogo global)
+   - Notas adicionales
 
 2. **Consulta de inventario:**
+   - **Filtrado automático por oficina del usuario** (via RLS)
    - Por ficha técnica
-   - Por localización
+   - Por almacén
+   - Por ubicación dentro del almacén
    - Por proveedor
    - Por rango de fechas
+   - Por estado (nueva/reencauchada)
+   - **Admin Nacional:** puede filtrar por oficina específica o ver todas
 
 3. **Salida de inventario:**
-   - Al montar en vehículo → pasa a LLANTAS
-   - Registro automático en HISTORIA
+   - Al montar en vehículo → pasa a TIRE_ACTIVE
+   - Registro automático en TIRE_HISTORY
+   - Validación: el vehículo debe pertenecer a la misma oficina
 
 **Reglas de Negocio:**
-- Cada llanta tiene identificador único (LLANTA, GRUPO)
+- Cada llanta tiene identificador único (tire_number, group) **dentro de su oficina**
+- El mismo tire_number puede existir en diferentes oficinas (inventarios separados)
 - GRUPO = '000' para llantas nuevas
 - GRUPO > '000' para reencauches (incrementa con cada reencauche)
 - No se pueden eliminar llantas con movimientos históricos
+- **RN-MULTISEDE-001:** Usuario no puede ingresar llantas en almacenes de otras oficinas
+- **RN-MULTISEDE-002:** Usuario no puede seleccionar proveedores de otras oficinas
+- **RN-MULTISEDE-003:** La ubicación seleccionada debe pertenecer al almacén seleccionado
+- **RN-MULTISEDE-004:** Al montar llanta en vehículo, ambos deben ser de la misma oficina
 
 **Tablas:**
-- `INVENTARIO`
-- `FICHATEC` (FK)
-- `PROVEEDORES_LLANTAS` (FK)
-- `LOCALIZA` (FK)
+- `tire_inventory` (con warehouse_id)
+- `tire_specifications` (FK - catálogo global)
+- `tire_suppliers` (FK - filtrado por office_id)
+- `warehouses` (FK - filtrado por office_id)
+- `warehouse_locations` (FK - filtrado por warehouse_id)
+
+**Campos Adicionales en tire_inventory:**
+```sql
+CREATE TABLE tire_inventory (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tire_number VARCHAR(20) NOT NULL,
+    "group" CHAR(3) NOT NULL CHECK ("group" ~ '^[0-9]{3}$'),
+    value DECIMAL(12,2) NOT NULL CHECK (value > 0),
+    entry_date DATE NOT NULL,
+    invoice_number VARCHAR(50) NOT NULL,
+    notes TEXT,
+
+    -- Referencias multi-sede
+    specification_id UUID NOT NULL REFERENCES tire_specifications(id),
+    supplier_id UUID NOT NULL REFERENCES tire_suppliers(id),
+    warehouse_id UUID NOT NULL REFERENCES warehouses(id),  -- CLAVE: define la oficina
+    location_id UUID NOT NULL REFERENCES warehouse_locations(id),
+
+    -- Información de reencauche
+    tire_code VARCHAR(20),
+    retread_value DECIMAL(12,2),
+    protector_code VARCHAR(20),
+    protector_value DECIMAL(12,2),
+
+    -- Auditoría
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT NOT NULL REFERENCES users(id),
+    updated_at TIMESTAMP WITH TIME ZONE,
+    updated_by BIGINT REFERENCES users(id),
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by BIGINT REFERENCES users(id),
+
+    -- Constraints
+    CONSTRAINT uk_tire_inventory_number_group_office
+        UNIQUE(tire_number, "group", warehouse_id),
+    CONSTRAINT fk_location_belongs_to_warehouse
+        FOREIGN KEY (location_id)
+        REFERENCES warehouse_locations(id)
+        CHECK (
+            location_id IN (
+                SELECT id FROM warehouse_locations
+                WHERE warehouse_id = tire_inventory.warehouse_id
+            )
+        )
+);
+
+-- Índices para performance
+CREATE INDEX idx_tire_inventory_warehouse ON tire_inventory(warehouse_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_tire_inventory_supplier ON tire_inventory(supplier_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_tire_inventory_specification ON tire_inventory(specification_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_tire_inventory_entry_date ON tire_inventory(entry_date) WHERE deleted_at IS NULL;
+
+-- Row-Level Security Policy
+ALTER TABLE tire_inventory ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tire_inventory_office_isolation ON tire_inventory
+    FOR ALL
+    TO authenticated_user
+    USING (
+        current_user_has_role('ROLE_ADMIN_NATIONAL')
+        OR
+        warehouse_id IN (
+            SELECT w.id FROM warehouses w
+            WHERE w.office_id = get_user_office_id()
+              AND w.deleted_at IS NULL
+        )
+    );
+```
+
+**Validaciones de Negocio:**
+1. **Validación de Almacén:**
+   - El warehouse_id debe existir, estar activo y pertenecer a la oficina del usuario
+   - El usuario debe tener permisos para operar en ese almacén
+
+2. **Validación de Ubicación:**
+   - La location_id debe pertenecer al warehouse_id seleccionado
+   - La ubicación debe estar activa
+
+3. **Validación de Proveedor:**
+   - El supplier_id debe existir, estar activo y pertenecer a la misma oficina que el almacén
+
+4. **Validación de Ficha Técnica:**
+   - El specification_id debe existir y estar activo (catálogo global)
+
+5. **Validación de Número de Llanta:**
+   - Único dentro de la combinación (tire_number, group, warehouse_id)
+   - Permite mismo número en diferentes oficinas
+
+**Casos de Uso:**
+
+**UC-002-01: Ingresar Llanta Nueva a Inventario**
+1. Usuario selecciona almacén (filtrado por su oficina)
+2. Sistema muestra selector de ubicaciones del almacén seleccionado
+3. Usuario ingresa datos de la llanta
+4. Usuario selecciona proveedor (filtrado por su oficina)
+5. Usuario selecciona ficha técnica (catálogo global)
+6. Sistema valida que warehouse, location y supplier pertenezcan a la misma oficina
+7. Sistema guarda registro en tire_inventory con warehouse_id
+8. RLS automáticamente asocia a la oficina del usuario
+
+**UC-002-02: Consultar Inventario por Almacén**
+1. Usuario accede a módulo de inventario
+2. Sistema aplica RLS: muestra SOLO almacenes de la oficina del usuario
+3. Usuario filtra por almacén específico
+4. Sistema muestra llantas de ese almacén
+5. Usuario puede filtrar además por ubicación, proveedor, ficha técnica
+
+**UC-002-03: Reportar Inventario Consolidado (Admin Nacional)**
+1. Admin Nacional accede a reporte consolidado
+2. Sistema detecta rol ROLE_ADMIN_NATIONAL
+3. Sistema muestra selector de oficina (opcional)
+4. Admin puede ver:
+   - Inventario de todas las oficinas
+   - Inventario de oficina específica
+   - Resúmenes por oficina
+5. Reporte incluye columna "Oficina" para distinguir origen
+
+**UC-002-04: Montar Llanta desde Inventario a Vehículo**
+1. Usuario selecciona vehículo (de su oficina)
+2. Sistema muestra llantas disponibles en inventario de la misma oficina
+3. Usuario selecciona llanta y posición
+4. Sistema valida:
+   - Llanta y vehículo pertenecen a la misma oficina
+   - Posición no está ocupada
+5. Sistema mueve llanta: tire_inventory → tire_active
+6. Sistema registra en tire_history
+
+**Endpoints REST:**
+```
+POST   /api/tire/inventory                    - Crear llanta en inventario
+GET    /api/tire/inventory                    - Listar inventario (filtrado por RLS)
+GET    /api/tire/inventory/{id}               - Obtener llanta por ID
+PUT    /api/tire/inventory/{id}               - Actualizar llanta
+DELETE /api/tire/inventory/{id}               - Eliminar llanta (soft delete)
+GET    /api/tire/inventory/by-warehouse/{warehouseId}  - Filtrar por almacén
+GET    /api/tire/inventory/by-location/{locationId}    - Filtrar por ubicación
+GET    /api/tire/inventory/available          - Llantas disponibles para montar
+POST   /api/tire/inventory/{id}/mount         - Montar llanta en vehículo
+GET    /api/tire/inventory/report/consolidated - Reporte consolidado (admin nacional)
+```
+
+**Componentes Frontend:**
+- `TireInventoryList` - Lista de inventario con filtros por almacén/ubicación
+- `TireInventoryForm` - Formulario de ingreso con selectores jerárquicos
+- `WarehouseSelector` - Selector de almacén (filtrado por oficina)
+- `LocationSelector` - Selector de ubicación (filtrado por almacén)
+- `SupplierSelector` - Selector de proveedor (filtrado por oficina)
+- `TireInventoryReport` - Reporte con agrupación por oficina (admin nacional)
+
+**Migración de Datos Legacy:**
+```sql
+-- Asociar inventario legacy a almacén por defecto de oficina principal
+INSERT INTO tire_inventory (
+    tire_number, "group", value, entry_date, invoice_number, notes,
+    specification_id, supplier_id, warehouse_id, location_id,
+    tire_code, retread_value, protector_code, protector_value,
+    created_at, created_by
+)
+SELECT
+    i.llanta,
+    i.grupo,
+    i.valor,
+    i.fecha,
+    i.factura,
+    i.obs,
+    ts.id,  -- specification_id migrado
+    sup.id, -- supplier_id migrado
+    (SELECT id FROM warehouses WHERE code = 'PRIN' AND office_id = (SELECT id FROM offices WHERE code = 'MAIN')),
+    loc.id, -- location_id migrado
+    i.neuma,
+    i.valorrn,
+    i.protec,
+    i.valorp,
+    CURRENT_TIMESTAMP,
+    1  -- usuario de migración
+FROM inventario i
+LEFT JOIN tire_specifications ts ON i.ficha = ts.legacy_code
+LEFT JOIN tire_suppliers sup ON i.proveedor = sup.legacy_code
+LEFT JOIN warehouse_locations loc ON i.local = loc.legacy_code
+WHERE i.llanta IS NOT NULL;
+```
 
 ---
 

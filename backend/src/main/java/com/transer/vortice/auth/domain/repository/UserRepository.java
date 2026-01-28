@@ -35,12 +35,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * Busca un usuario por su nombre de usuario o email.
+     * Carga eagerly los roles y permisos del usuario para evitar LazyInitializationException.
      *
      * @param username nombre de usuario
      * @param email email del usuario
      * @return Optional con el usuario si existe
      */
-    Optional<User> findByUsernameOrEmail(String username, String email);
+    @Query("SELECT DISTINCT u FROM User u " +
+           "LEFT JOIN FETCH u.roles r " +
+           "LEFT JOIN FETCH r.permissions " +
+           "WHERE u.username = :username OR u.email = :email")
+    Optional<User> findByUsernameOrEmail(@Param("username") String username, @Param("email") String email);
 
     /**
      * Verifica si existe un usuario con el nombre de usuario dado.

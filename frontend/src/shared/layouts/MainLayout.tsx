@@ -40,6 +40,11 @@ import {
   TireRepair as TireRepairIcon,
   ExpandLess,
   ExpandMore,
+  Business as BusinessIcon,
+  Warehouse as WarehouseIcon,
+  Place as PlaceIcon,
+  Store as StoreIcon,
+  AccountTree as OrganizationIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
@@ -60,6 +65,16 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+  {
+    text: 'Organización',
+    icon: <OrganizationIcon />,
+    subItems: [
+      { text: 'Oficinas', icon: <BusinessIcon />, path: '/organization/offices' },
+      { text: 'Almacenes', icon: <WarehouseIcon />, path: '/organization/warehouses' },
+      { text: 'Ubicaciones', icon: <PlaceIcon />, path: '/organization/locations' },
+      { text: 'Proveedores de Llantas', icon: <StoreIcon />, path: '/organization/suppliers' },
+    ]
+  },
   {
     text: 'Taller',
     icon: <BuildIcon />,

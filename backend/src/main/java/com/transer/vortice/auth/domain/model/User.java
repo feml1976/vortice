@@ -13,6 +13,7 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Entidad de dominio que representa un usuario en el sistema.
@@ -74,6 +75,9 @@ public class User extends AuditableEntity {
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    @Column(name = "office_id", nullable = false)
+    private UUID officeId;
 
     // =====================================================
     // Métodos de negocio

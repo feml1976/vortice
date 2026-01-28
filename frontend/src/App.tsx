@@ -19,6 +19,15 @@ import DashboardPage from '@/shared/pages/DashboardPage';
 // Pages - Tire Module
 import { TireSpecificationPage } from '@/features/tire';
 
+// Pages - Organization Module
+import {
+  OfficePage,
+  WarehousePage,
+  WarehouseLocationPage,
+  TireSupplierPage,
+  OfficeProvider,
+} from '@/features/organization';
+
 // Components
 import AuthGuard from '@/features/auth/components/AuthGuard';
 import MainLayout from '@/shared/layouts/MainLayout';
@@ -39,8 +48,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
-          <Routes>
+        <OfficeProvider>
+          <BrowserRouter>
+            <Routes>
             {/* Ruta raíz - redirige a dashboard o login según autenticación */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
@@ -93,6 +103,12 @@ function App() {
               {/* Módulo de Llantas */}
               <Route path="/tire/specifications" element={<TireSpecificationPage />} />
 
+              {/* Módulo de Organización */}
+              <Route path="/organization/offices" element={<OfficePage />} />
+              <Route path="/organization/warehouses" element={<WarehousePage />} />
+              <Route path="/organization/locations" element={<WarehouseLocationPage />} />
+              <Route path="/organization/suppliers" element={<TireSupplierPage />} />
+
               {/* Módulos (placeholder - a implementar) */}
               <Route path="/workshop" element={<DashboardPage />} />
               <Route path="/inventory" element={<DashboardPage />} />
@@ -106,6 +122,7 @@ function App() {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </BrowserRouter>
+        </OfficeProvider>
         <Toaster
           position="top-right"
           toastOptions={{

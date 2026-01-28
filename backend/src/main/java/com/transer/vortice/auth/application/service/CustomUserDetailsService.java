@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -70,14 +72,29 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     /**
-     * Convierte los roles del usuario a GrantedAuthorities de Spring Security.
+     * Convierte los roles y permisos del usuario a GrantedAuthorities de Spring Security.
+     * Incluye tanto los roles (con prefijo ROLE_) como los permisos individuales.
      *
      * @param user usuario del dominio
      * @return colección de authorities
      */
     private Collection<? extends GrantedAuthority> getAuthorities(User user) {
-        return user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
-                .collect(Collectors.toSet());
+        Set<GrantedAuthority> authorities = new HashSet<>();
+
+        // Agregar autoridades basadas en roles y sus permisos
+        user.getRoles().forEach(role -> {
+            // Agregar el rol con prefijo ROLE_
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+
+            // Agregar permisos del rol
+            role.getPermissions().forEach(permission -> {
+                authorities.add(new SimpleGrantedAuthority(permission.getName()));
+            });
+        });
+
+        log.debug("Authorities cargadas para usuario {}: {}", user.getUsername(),
+                  authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(", ")));
+
+        return authorities;
     }
 }
