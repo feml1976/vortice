@@ -46,6 +46,15 @@ CREATE INDEX IF NOT EXISTS idx_offices_city ON offices(city) WHERE deleted_at IS
 CREATE INDEX IF NOT EXISTS idx_offices_active ON offices(is_active) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_offices_created_at ON offices(created_at);
 
+-- Agregar columnas faltantes si no existen
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'offices' AND column_name = 'deleted_at') THEN
+        ALTER TABLE offices ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
+        ALTER TABLE offices ADD COLUMN deleted_by BIGINT REFERENCES users(id);
+    END IF;
+END $$;
+
 -- Comentarios
 COMMENT ON TABLE offices IS 'Sedes u oficinas de la empresa';
 COMMENT ON COLUMN offices.code IS 'Código único de la oficina (ej: BOG, MED, CALI)';
@@ -95,6 +104,15 @@ CREATE INDEX IF NOT EXISTS idx_warehouses_code ON warehouses(office_id, code) WH
 CREATE INDEX IF NOT EXISTS idx_warehouses_active ON warehouses(is_active) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_warehouses_created_at ON warehouses(created_at);
 
+-- Agregar columnas faltantes si no existen
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'warehouses' AND column_name = 'deleted_at') THEN
+        ALTER TABLE warehouses ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
+        ALTER TABLE warehouses ADD COLUMN deleted_by BIGINT REFERENCES users(id);
+    END IF;
+END $$;
+
 -- Comentarios
 COMMENT ON TABLE warehouses IS 'Almacenes de cada oficina';
 COMMENT ON COLUMN warehouses.code IS 'Código del almacén (único por oficina)';
@@ -141,6 +159,15 @@ CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse ON warehouse_locati
 CREATE INDEX IF NOT EXISTS idx_warehouse_locations_code ON warehouse_locations(warehouse_id, code) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_warehouse_locations_active ON warehouse_locations(is_active) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_warehouse_locations_created_at ON warehouse_locations(created_at);
+
+-- Agregar columnas faltantes si no existen
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'warehouse_locations' AND column_name = 'deleted_at') THEN
+        ALTER TABLE warehouse_locations ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
+        ALTER TABLE warehouse_locations ADD COLUMN deleted_by BIGINT REFERENCES users(id);
+    END IF;
+END $$;
 
 -- Comentarios
 COMMENT ON TABLE warehouse_locations IS 'Ubicaciones físicas dentro de cada almacén';
@@ -198,6 +225,15 @@ CREATE INDEX IF NOT EXISTS idx_tire_suppliers_code ON tire_suppliers(office_id, 
 CREATE INDEX IF NOT EXISTS idx_tire_suppliers_active ON tire_suppliers(is_active) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_tire_suppliers_tax_id ON tire_suppliers(tax_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_tire_suppliers_created_at ON tire_suppliers(created_at);
+
+-- Agregar columnas faltantes si no existen
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tire_suppliers' AND column_name = 'deleted_at') THEN
+        ALTER TABLE tire_suppliers ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE;
+        ALTER TABLE tire_suppliers ADD COLUMN deleted_by BIGINT REFERENCES users(id);
+    END IF;
+END $$;
 
 -- Comentarios
 COMMENT ON TABLE tire_suppliers IS 'Proveedores de llantas por oficina';
